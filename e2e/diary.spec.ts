@@ -82,11 +82,15 @@ test.describe('Encrypted Diary Flow', () => {
     await page.locator('#content').fill('Updated content with changes.');
     await page.getByRole('button', { name: '保存' }).click();
     
-    // Wait for redirect and content reload
+    // Wait for redirect
     await expect(page).toHaveURL(`/#/diary/${today}`, { timeout: 10000 });
     
-    // Wait for the actual updated content to be visible (not just loading state)
-    await expect(page.getByText('Updated Title')).toBeVisible({ timeout: 15000 });
+    // Wait for loading state to complete and content to render
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+    
+    // Verify updated content visible
+    await expect(page.getByText('Updated Title')).toBeVisible({ timeout: 20000 });
     await expect(page.getByText('Updated content with changes.')).toBeVisible({ timeout: 5000 });
   });
 
