@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: ['vault.spec.ts', 'security.spec.ts', 'diary.spec.ts', 'backup.spec.ts'],
+  testMatch: ['vault.spec.ts', 'security.spec.ts', 'diary.spec.ts', 'backup.spec.ts', 'migration.spec.ts'],
   fullyParallel: false, // Serial to avoid IndexedDB conflicts
   forbidOnly: !!process.env.CI,
   retries: 0,

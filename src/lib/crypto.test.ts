@@ -104,10 +104,11 @@ describe('Crypto Module', () => {
       const plaintext = 'Secret message';
       const encrypted = await encrypt(plaintext, testPassword);
       
-      // Tamper with authTag
+      // Tamper with authTag by flipping one bit
+      const authTagHex = encrypted.authTag;
       const tampered: EncryptedEnvelope = {
         ...encrypted,
-        authTag: encrypted.authTag.replace(/0/g, '1'),
+        authTag: (parseInt(authTagHex.slice(0, 2), 16) ^ 0xFF).toString(16).padStart(2, '0') + authTagHex.slice(2),
       };
       
       await expect(

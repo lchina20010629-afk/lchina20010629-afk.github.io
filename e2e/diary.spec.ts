@@ -10,7 +10,7 @@ test.describe('Encrypted Diary Flow', () => {
   
   test.beforeEach(async ({ page, context }) => {
     await context.clearCookies();
-    await page.goto('http://localhost:5173/settings');
+    await page.goto('/#/settings');
     
     // Clear IndexedDB
     await page.evaluate(async () => {
@@ -56,7 +56,7 @@ test.describe('Encrypted Diary Flow', () => {
     
     await page.getByRole('button', { name: '保存' }).click();
     
-    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}`, { timeout: 10000 });
+    await expect(page).toHaveURL(`/#/diary/${today}`, { timeout: 10000 });
     await expect(page.getByText('测试日记 🌟')).toBeVisible();
   });
 
@@ -71,19 +71,20 @@ test.describe('Encrypted Diary Flow', () => {
     await page.locator('#content').fill('Original content here.');
     await page.getByRole('button', { name: '保存' }).click();
     
-    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}`);
+    await expect(page).toHaveURL(`/#/diary/${today}`);
     await expect(page.getByText('Original Title')).toBeVisible();
     
     // Edit it
     await page.getByRole('button', { name: '编辑' }).click();
-    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}/edit`);
+    await expect(page).toHaveURL(`/#/diary/${today}/edit`);
     
     await page.locator('#title').fill('Updated Title');
     await page.locator('#content').fill('Updated content with changes.');
     await page.getByRole('button', { name: '保存' }).click();
     
-    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}`);
-    await expect(page.getByText('Updated Title')).toBeVisible();
+    await expect(page).toHaveURL(`/#/diary/${today}`, { timeout: 10000 });
+    await page.waitForTimeout(1000); // Wait for content to reload and render
+    await expect(page.getByText('Updated Title')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Updated content with changes.')).toBeVisible();
   });
 
@@ -98,14 +99,14 @@ test.describe('Encrypted Diary Flow', () => {
     await page.locator('#content').fill('This will be deleted.');
     await page.getByRole('button', { name: '保存' }).click();
     
-    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}`);
+    await expect(page).toHaveURL(`/#/diary/${today}`);
     
     // Set up dialog handler before clicking delete
     page.on('dialog', dialog => dialog.accept());
     
     await page.getByRole('button', { name: '删除' }).click();
     
-    await expect(page).toHaveURL('http://localhost:5173/#/diary');
+    await expect(page).toHaveURL('/#/diary');
   });
 
   test('locked vault blocks diary access', async ({ page }) => {

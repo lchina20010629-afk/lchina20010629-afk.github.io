@@ -10,7 +10,7 @@ test.describe('Vault Management', () => {
     await context.clearCookies();
     
     // Clear IndexedDB first
-    await page.goto('http://localhost:5173/');
+    await page.goto('/');
     await page.evaluate(async () => {
       const dbs = await indexedDB.databases();
       for (const db of dbs) {
@@ -23,7 +23,7 @@ test.describe('Vault Management', () => {
     });
     
     // Navigate to settings after cleanup
-    await page.goto('http://localhost:5173/#/settings');
+    await page.goto('/#/settings');
   });
 
   test('initializes vault with strong password', async ({ page }) => {

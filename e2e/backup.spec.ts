@@ -15,7 +15,7 @@ test.describe('Backup and Import', () => {
   
   test.beforeEach(async ({ page, context }) => {
     await context.clearCookies();
-    await page.goto('http://localhost:5173/settings');
+    await page.goto('/#/settings');
     
     // Clear IndexedDB
     await page.evaluate(async () => {
@@ -49,7 +49,7 @@ test.describe('Backup and Import', () => {
     await page.locator('#title').fill('Test Export Entry');
     await page.locator('#content').fill('Content for export test.');
     await page.getByRole('button', { name: '保存' }).click();
-    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}`);
+    await expect(page).toHaveURL(`/#/diary/${today}`);
 
     // Export backup using client-side navigation
     await page.click('a[href="#/settings"]');

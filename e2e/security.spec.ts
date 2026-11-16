@@ -9,7 +9,7 @@ test.describe('Security: No Secret Persistence', () => {
 
   test.beforeEach(async ({ page, context }) => {
     await context.clearCookies();
-    await page.goto('http://localhost:5173/settings');
+    await page.goto('/#/settings');
     
     await page.evaluate(async () => {
       const dbs = await indexedDB.databases();
@@ -83,7 +83,7 @@ test.describe('Security: No Secret Persistence', () => {
     await page.reload();
 
     // Should be locked after reload
-    await page.goto('http://localhost:5173/settings');
+    await page.goto('/#/settings');
     await expect(page.getByText('保险库已锁定')).toBeVisible();
   });
 

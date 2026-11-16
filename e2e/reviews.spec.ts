@@ -9,7 +9,7 @@ test.describe('Review Features', () => {
   test.beforeEach(async ({ page, context }) => {
     // Clear IndexedDB before each test
     await context.clearCookies();
-    await page.goto('http://localhost:8175/');
+    await page.goto('/');
     await page.evaluate(() => {
       return new Promise<void>((resolve) => {
         const dbs = indexedDB.databases?.() || Promise.resolve([]);
@@ -33,7 +33,7 @@ test.describe('Review Features', () => {
     await fs.cp(join(FIXTURES_DIR, 'encrypted'), join(process.cwd(), 'dist/data/encrypted'), { recursive: true });
     
     // Init vault and unlock
-    await page.goto('http://localhost:8175/');
+    await page.goto('/');
     await page.locator('input[type="password"]').first().fill(TEST_PASSWORD);
     await page.locator('input[type="password"]').last().fill(TEST_PASSWORD);
     await page.locator('button:has-text("初始化保险库")').click();
@@ -47,7 +47,7 @@ test.describe('Review Features', () => {
   });
 
   test('should load and display published reviews', async ({ page }) => {
-    await page.goto('http://localhost:8175/#/reviews');
+    await page.goto('/#/reviews');
     
     // Should see all 3 review types
     await expect(page.locator('text=2024-W11')).toBeVisible(); // weekly
@@ -61,7 +61,7 @@ test.describe('Review Features', () => {
   });
 
   test('should render weekly review detail', async ({ page }) => {
-    await page.goto('http://localhost:8175/#/reviews/weekly/2024-W11');
+    await page.goto('/#/reviews/weekly/2024-W11');
     
     await expect(page.locator('text=第11周总结')).toBeVisible();
     await expect(page.locator('text=本周完成了两天的学习任务')).toBeVisible();
@@ -73,14 +73,14 @@ test.describe('Review Features', () => {
   });
 
   test('should render monthly review detail', async ({ page }) => {
-    await page.goto('http://localhost:8175/#/reviews/monthly/2024-03');
+    await page.goto('/#/reviews/monthly/2024-03');
     
     await expect(page.locator('text=三月总结')).toBeVisible();
     await expect(page.locator('text=三月份建立了四列学习法的框架')).toBeVisible();
   });
 
   test('should render yearly review detail', async ({ page }) => {
-    await page.goto('http://localhost:8175/#/reviews/yearly/2024');
+    await page.goto('/#/reviews/yearly/2024');
     
     await expect(page.locator('text=2024年度总结')).toBeVisible();
     await expect(page.locator('text=2024年是个人成长系统化的一年')).toBeVisible();
@@ -88,7 +88,7 @@ test.describe('Review Features', () => {
   });
 
   test('should allow editing draft review', async ({ page }) => {
-    await page.goto('http://localhost:8175/#/reviews/weekly/2099-W99');
+    await page.goto('/#/reviews/weekly/2099-W99');
     
     // Should create new draft
     const titleInput = page.locator('input#title');
@@ -105,20 +105,20 @@ test.describe('Review Features', () => {
   });
 
   test('should clear reviews on lock', async ({ page }) => {
-    await page.goto('http://localhost:8175/#/reviews/weekly/2024-W11');
+    await page.goto('/#/reviews/weekly/2024-W11');
     await expect(page.locator('text=第11周总结')).toBeVisible();
     
     // Lock
-    await page.goto('http://localhost:8175/#/settings');
+    await page.goto('/#/settings');
     await page.locator('button:has-text("锁定")').click();
     
     // Navigate back - should show locked message
-    await page.goto('http://localhost:8175/#/reviews');
+    await page.goto('/#/reviews');
     await expect(page.locator('text=请先解锁保险库')).toBeVisible();
   });
 
   test('should use exact period keys', async ({ page }) => {
-    await page.goto('http://localhost:8175/#/reviews');
+    await page.goto('/#/reviews');
     
     // Check quick create buttons use current period format
     const quickButtons = page.locator('.action-buttons a');
