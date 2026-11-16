@@ -1,98 +1,202 @@
-import { BookOpen, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { BookOpen, Plus, Lock, Calendar } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
+import { useVault } from '../contexts/VaultContext';
+import { getAllCourseRecords } from '../lib/courseStorage';
+import { fetchManifest } from '../lib/manifestLoader';
+import { COURSE_COLUMNS } from '../lib/courseStorage';
+
+interface CourseEntry {
+  date: string;
+  id: string;
+  isPublished?: boolean;
+}
 
 export function Learning() {
-  const courses = [
-    { name: '英语', target: 10, color: '#4A90E2' },
-    { name: '泰语', target: 8, color: '#7FB069' },
-    { name: '修身养性', target: 6, color: '#E8A838' },
-    { name: '生财有道真实案例', target: 6, color: '#D64545' },
-  ];
+  const { isUnlocked } = useVault();
+  const location = useLocation();
+  const [entries, setEntries] = useState<CourseEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const totalMinutes = courses.reduce((sum, course) => sum + course.target, 0);
+  useEffect(() => {
+    if (isUnlocked) {
+      loadEntries();
+    } else {
+      setLoading(false);
+    }
+  }, [isUnlocked, location.pathname]);
+
+  const loadEntries = async () => {
+    try {
+      // Load local records
+      const local = await getAllCourseRecords();
+      const localSet = new Set(local.map(e => e.date));
+      
+      // Load published
+      const published: CourseEntry[] = [];
+      try {
+        const manifest = await fetchManifest('/data');
+        const courseMeta = manifest.entries.filter(e => e.type === 'course');
+        for (const meta of courseMeta) {
+          if (!localSet.has(meta.date)) {
+            published.push({
+              date: meta.date,
+              id: meta.id,
+              isPublished: true,
+            });
+          }
+        }
+      } catch {
+        // No published content
+      }
+      
+      // Merge and sort
+      const all = [
+        ...local.map(e => ({ ...e, isPublished: false })),
+        ...published,
+      ].sort((a, b) => b.date.localeCompare(a.date));
+      
+      setEntries(all);
+    } catch (err) {
+      console.error('Failed to load entries:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTodayDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
+  if (!isUnlocked) {
+    return (
+      <div className="learning">
+        <header className="page-header">
+          <h1>成长学习</h1>
+        </header>
+        <div className="card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Lock size={24} />
+            <p>请先解锁保险库才能查看学习记录</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div className="card"><p>加载中...</p></div>;
+  }
 
   return (
     <div className="learning">
       <header className="page-header">
-        <h1>成长学习</h1>
-        <p className="text-muted">持续学习，不断成长</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1>成长学习</h1>
+          <Link to={`#/learning/${getTodayDate()}`} className="btn btn-primary">
+            <Plus size={20} />
+            今日学习
+          </Link>
+        </div>
       </header>
 
-      <div className="learning-overview card" style={{ marginBottom: 'var(--spacing-xl)' }}>
-        <h2>每日学习计划</h2>
-        <div className="courses-grid">
-          {courses.map((course) => (
-            <div key={course.name} className="course-card">
-              <div className="course-icon" style={{ backgroundColor: `${course.color}20`, color: course.color }}>
-                <BookOpen size={20} />
-              </div>
-              <h3>{course.name}</h3>
-              <div className="course-time">
-                <Clock size={16} />
-                <span>{course.target} 分钟</span>
-              </div>
+      <div className="learning-info card">
+        <h3>四列学习法</h3>
+        <div className="columns-info">
+          {COURSE_COLUMNS.map(col => (
+            <div key={col.name} className="column-info">
+              <strong>{col.label}</strong>
+              <span>{col.targetMinutes}分钟</span>
             </div>
           ))}
         </div>
-        <div className="total-time">
-          <strong>每日总计：</strong> {totalMinutes} 分钟
-        </div>
       </div>
 
-      <EmptyState
-        icon={BookOpen}
-        title="暂无学习记录"
-        description="开始您的学习之旅吧！记录下每一次的学习成果和感悟。"
-      />
+      {entries.length === 0 ? (
+        <EmptyState
+          icon={BookOpen}
+          title="暂无学习记录"
+          description="开始记录您的每日学习进度"
+          action={{
+            label: '创建今日记录',
+            onClick: () => window.location.hash = `#/learning/${getTodayDate()}`
+          }}
+        />
+      ) : (
+        <div className="learning-list">
+          {entries.map((entry) => (
+            <Link key={entry.id} to={`#/learning/${entry.date}`} className="learning-card card">
+              <div className="learning-date">
+                <Calendar size={20} />
+                {entry.date}
+              </div>
+              {entry.isPublished && (
+                <span className="published-badge">已发布</span>
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
 
       <style>{`
-        .learning-overview h2 {
-          margin-bottom: var(--spacing-lg);
-        }
-
-        .courses-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: var(--spacing-md);
-          margin-bottom: var(--spacing-lg);
-        }
-
-        .course-card {
-          background-color: var(--color-bg-secondary);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-md);
+        .learning-info {
           padding: var(--spacing-lg);
+          margin-bottom: var(--spacing-lg);
         }
 
-        .course-icon {
-          width: 40px;
-          height: 40px;
-          border-radius: var(--radius-md);
+        .columns-info {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: var(--spacing-md);
+          margin-top: var(--spacing-md);
+        }
+
+        .column-info {
           display: flex;
+          flex-direction: column;
+          gap: var(--spacing-xs);
+          padding: var(--spacing-sm);
+          background: var(--color-bg-secondary);
+          border-radius: 4px;
+        }
+
+        .column-info strong {
+          color: var(--color-primary);
+        }
+
+        .learning-list {
+          display: grid;
+          gap: var(--spacing-md);
+        }
+
+        .learning-card {
+          padding: var(--spacing-lg);
+          text-decoration: none;
+          color: inherit;
+          display: flex;
+          justify-content: space-between;
           align-items: center;
-          justify-content: center;
-          margin-bottom: var(--spacing-md);
+          transition: all var(--transition-fast);
         }
 
-        .course-card h3 {
-          font-size: var(--font-size-base);
-          margin-bottom: var(--spacing-sm);
+        .learning-card:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
         }
 
-        .course-time {
+        .learning-date {
           display: flex;
           align-items: center;
           gap: var(--spacing-sm);
-          color: var(--color-text-secondary);
-          font-size: var(--font-size-sm);
+          font-weight: 600;
+          font-size: var(--font-size-lg);
         }
 
-        .total-time {
-          text-align: center;
-          padding: var(--spacing-md);
-          background-color: var(--color-bg-secondary);
-          border-radius: var(--radius-md);
-          font-size: var(--font-size-lg);
+        .published-badge {
+          font-size: var(--font-size-sm);
+          color: var(--color-primary);
+          opacity: 0.7;
         }
       `}</style>
     </div>

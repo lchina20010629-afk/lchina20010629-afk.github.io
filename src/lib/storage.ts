@@ -8,12 +8,6 @@
  */
 
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import type {
-  CourseRecord,
-  WeeklyReview,
-  MonthlyReview,
-  YearlyReview,
-} from '../types/crypto';
 
 /**
  * 数据库名称和版本
@@ -40,22 +34,38 @@ interface LifeGrowthDB extends DBSchema {
   };
   courseDrafts: {
     key: string; // date (YYYY-MM-DD)
-    value: CourseRecord;
+    value: {
+      date: string;
+      id: string;
+      encrypted: string;
+    };
     indexes: { 'by-date': string };
   };
   weeklyDrafts: {
     key: string; // period (YYYY-Www)
-    value: WeeklyReview;
+    value: {
+      period: string;
+      id: string;
+      encrypted: string;
+    };
     indexes: { 'by-period': string };
   };
   monthlyDrafts: {
     key: string; // period (YYYY-MM)
-    value: MonthlyReview;
+    value: {
+      period: string;
+      id: string;
+      encrypted: string;
+    };
     indexes: { 'by-period': string };
   };
   yearlyDrafts: {
     key: string; // period (YYYY)
-    value: YearlyReview;
+    value: {
+      period: string;
+      id: string;
+      encrypted: string;
+    };
     indexes: { 'by-period': string };
   };
 }
@@ -169,105 +179,8 @@ export async function setTheme(theme: 'light' | 'dark' | 'system'): Promise<void
 // ===== Diary Drafts =====
 // Note: Diary operations are now in diaryStorage.ts with encryption
 
-// ===== Course Drafts =====
-
-export async function saveCourseDraft(record: CourseRecord): Promise<void> {
-  if (!await isVaultInitialized()) {
-    throw new Error('保险库未初始化，无法保存个人内容。请先初始化保险库。');
-  }
-  const db = await openDatabase();
-  await db.put('courseDrafts', record);
-}
-
-export async function getCourseDraft(date: string): Promise<CourseRecord | undefined> {
-  const db = await openDatabase();
-  return db.get('courseDrafts', date);
-}
-
-export async function getAllCourseDrafts(): Promise<CourseRecord[]> {
-  const db = await openDatabase();
-  return db.getAll('courseDrafts');
-}
-
-export async function deleteCourseDraft(date: string): Promise<void> {
-  const db = await openDatabase();
-  await db.delete('courseDrafts', date);
-}
-
-// ===== Weekly Review Drafts =====
-
-export async function saveWeeklyDraft(review: WeeklyReview): Promise<void> {
-  if (!await isVaultInitialized()) {
-    throw new Error('保险库未初始化，无法保存个人内容。请先初始化保险库。');
-  }
-  const db = await openDatabase();
-  await db.put('weeklyDrafts', review);
-}
-
-export async function getWeeklyDraft(period: string): Promise<WeeklyReview | undefined> {
-  const db = await openDatabase();
-  return db.get('weeklyDrafts', period);
-}
-
-export async function getAllWeeklyDrafts(): Promise<WeeklyReview[]> {
-  const db = await openDatabase();
-  return db.getAll('weeklyDrafts');
-}
-
-export async function deleteWeeklyDraft(period: string): Promise<void> {
-  const db = await openDatabase();
-  await db.delete('weeklyDrafts', period);
-}
-
-// ===== Monthly Review Drafts =====
-
-export async function saveMonthlyDraft(review: MonthlyReview): Promise<void> {
-  if (!await isVaultInitialized()) {
-    throw new Error('保险库未初始化，无法保存个人内容。请先初始化保险库。');
-  }
-  const db = await openDatabase();
-  await db.put('monthlyDrafts', review);
-}
-
-export async function getMonthlyDraft(period: string): Promise<MonthlyReview | undefined> {
-  const db = await openDatabase();
-  return db.get('monthlyDrafts', period);
-}
-
-export async function getAllMonthlyDrafts(): Promise<MonthlyReview[]> {
-  const db = await openDatabase();
-  return db.getAll('monthlyDrafts');
-}
-
-export async function deleteMonthlyDraft(period: string): Promise<void> {
-  const db = await openDatabase();
-  await db.delete('monthlyDrafts', period);
-}
-
-// ===== Yearly Review Drafts =====
-
-export async function saveYearlyDraft(review: YearlyReview): Promise<void> {
-  if (!await isVaultInitialized()) {
-    throw new Error('保险库未初始化，无法保存个人内容。请先初始化保险库。');
-  }
-  const db = await openDatabase();
-  await db.put('yearlyDrafts', review);
-}
-
-export async function getYearlyDraft(period: string): Promise<YearlyReview | undefined> {
-  const db = await openDatabase();
-  return db.get('yearlyDrafts', period);
-}
-
-export async function getAllYearlyDrafts(): Promise<YearlyReview[]> {
-  const db = await openDatabase();
-  return db.getAll('yearlyDrafts');
-}
-
-export async function deleteYearlyDraft(period: string): Promise<void> {
-  const db = await openDatabase();
-  await db.delete('yearlyDrafts', period);
-}
+// ===== Course / Review Drafts =====
+// Note: Course/review operations now in courseStorage.ts/reviewStorage.ts with encryption
 
 /**
  * 清除所有数据（用于重置）
@@ -293,17 +206,8 @@ export async function clearAllData(): Promise<void> {
 
 /**
  * 导出所有草稿数据
- * Note: Diary exports should use diaryStorage.ts
+ * Note: Diary/course/review exports should use respective storage modules
  */
-export async function exportAllDrafts() {
-  return {
-    courses: await getAllCourseDrafts(),
-    weekly: await getAllWeeklyDrafts(),
-    monthly: await getAllMonthlyDrafts(),
-    yearly: await getAllYearlyDrafts(),
-    exportedAt: new Date().toISOString(),
-  };
-}
 
 /**
  * 获取存储统计
@@ -312,10 +216,10 @@ export async function getStorageStats() {
   const db = await openDatabase();
   const [diaryCount, courseCount, weeklyCount, monthlyCount, yearlyCount] = await Promise.all([
     db.count('diaryDrafts'),
-    (await getAllCourseDrafts()).length,
-    (await getAllWeeklyDrafts()).length,
-    (await getAllMonthlyDrafts()).length,
-    (await getAllYearlyDrafts()).length,
+    db.count('courseDrafts'),
+    db.count('weeklyDrafts'),
+    db.count('monthlyDrafts'),
+    db.count('yearlyDrafts'),
   ]);
 
   return {

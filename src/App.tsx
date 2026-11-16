@@ -8,7 +8,9 @@ import { DiaryCreate } from './pages/DiaryCreate';
 import { DiaryDetail } from './pages/DiaryDetail';
 import { DiaryEdit } from './pages/DiaryEdit';
 import { Learning } from './pages/Learning';
+import { CourseDetail } from './pages/CourseDetail';
 import { Reviews } from './pages/Reviews';
+import { ReviewDetail } from './pages/ReviewDetail';
 import { Settings } from './pages/Settings';
 
 export function App() {
@@ -24,7 +26,9 @@ export function App() {
               <Route path="/diary/:date" element={<DiaryDetail />} />
               <Route path="/diary/:date/edit" element={<DiaryEdit />} />
               <Route path="/learning" element={<Learning />} />
+              <Route path="/learning/:date" element={<CourseDetail />} />
               <Route path="/reviews" element={<Reviews />} />
+              <Route path="/reviews/:type/:period" element={<ReviewDetail />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </Layout>
