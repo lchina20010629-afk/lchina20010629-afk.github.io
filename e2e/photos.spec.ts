@@ -59,7 +59,8 @@ test.describe('Photo Publication End-to-End', () => {
     
     // Encrypt entry with CLI tool
     console.log('Encrypting diary with photo via CLI...');
-    const cmd = `cd /agent/repos/lchina20010629-afk.github.io && echo "${TEST_PASSWORD}" | npx tsx scripts/encrypt-entry.ts --stdin-password --type diary --date 2024-04-01 --input ${TEST_DATA_DIR}/diary-with-photo.json --output ${TEST_DATA_DIR}`;
+    const repoRoot = process.cwd();
+    const cmd = `cd ${repoRoot} && echo "${TEST_PASSWORD}" | npx tsx scripts/encrypt-entry.ts --stdin-password --type diary --date 2024-04-01 --input ${TEST_DATA_DIR}/diary-with-photo.json --output ${TEST_DATA_DIR}`;
     execSync(cmd, { stdio: 'inherit' });
     
     // Verify manifest was created
@@ -125,9 +126,10 @@ test.describe('Photo Publication End-to-End', () => {
   
   test('browser loads and displays published photo', async ({ page }) => {
     // Build app and copy test data
-    execSync('cd /agent/repos/lchina20010629-afk.github.io && npm run build', { stdio: 'inherit' });
-    await fs.rm('/agent/repos/lchina20010629-afk.github.io/dist/data', { recursive: true, force: true });
-    await fs.cp(TEST_DATA_DIR, '/agent/repos/lchina20010629-afk.github.io/dist/data', { recursive: true });
+    const repoRoot = process.cwd();
+    execSync(`cd ${repoRoot} && npm run build`, { stdio: 'inherit' });
+    await fs.rm(join(repoRoot, 'dist/data'), { recursive: true, force: true });
+    await fs.cp(TEST_DATA_DIR, join(repoRoot, 'dist/data'), { recursive: true });
     
     // Start server (webServer config handles this)
     await page.goto('/#/settings');
