@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * E2E tests for export/import encrypted backup functionality
@@ -55,15 +59,25 @@ test.describe('Backup and Import', () => {
     const downloadPath = join(__dirname, '../temp-backup.json');
     await download.saveAs(downloadPath);
 
-    // Clear storage
+    // Clear storage - navigate to app first to get proper context
     await context.clearCookies();
-    await page.evaluate(() => {
-      return new Promise((resolve) => {
-        const request = indexedDB.deleteDatabase('life-growth-db');
-        request.onsuccess = () => resolve(undefined);
-        request.onerror = () => resolve(undefined);
-      });
+    await page.goto('http://localhost:5173');
+    
+    await page.evaluate(async () => {
+      // Close any open DB connections
+      sessionStorage.clear();
+      localStorage.clear();
+      
+      // Delete databases
+      const dbs = await indexedDB.databases();
+      for (const db of dbs) {
+        if (db.name) {
+          indexedDB.deleteDatabase(db.name);
+        }
+      }
     });
+    
+    await page.waitForTimeout(500);
 
     // Re-initialize vault with same password
     await page.goto('http://localhost:5173/settings');

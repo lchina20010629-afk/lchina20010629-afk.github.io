@@ -6,7 +6,7 @@ import { exportAllData, importData, downloadExport } from '../lib/exportImport';
 import { EmptyState } from '../components/EmptyState';
 
 export function Settings() {
-  const { isInitialized, isUnlocked, initialize, lock, unlock } = useVault();
+  const { isInitialized, isUnlocked, initialize, lock, unlock, password: vaultPassword } = useVault();
   const [showInitForm, setShowInitForm] = useState(false);
   const [showUnlockForm, setShowUnlockForm] = useState(false);
   const [password, setPassword] = useState('');
@@ -65,7 +65,7 @@ export function Settings() {
   };
 
   const handleExport = async () => {
-    if (!password) {
+    if (!vaultPassword) {
       setError('请先解锁保险库');
       return;
     }
@@ -74,7 +74,7 @@ export function Settings() {
     setError('');
 
     try {
-      const blob = await exportAllData(password);
+      const blob = await exportAllData(vaultPassword);
       downloadExport(blob);
     } catch (err) {
       setError('导出失败: ' + (err as Error).message);
@@ -89,7 +89,7 @@ export function Settings() {
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !password) {
+    if (!file || !vaultPassword) {
       return;
     }
 
@@ -98,7 +98,7 @@ export function Settings() {
     setImportResult(null);
 
     try {
-      const result = await importData(file, password);
+      const result = await importData(file, vaultPassword);
       setImportResult(result);
     } catch (err) {
       setError('导入失败: ' + (err as Error).message);

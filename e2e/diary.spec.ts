@@ -52,7 +52,7 @@ test.describe('Encrypted Diary Flow', () => {
     // Skip image upload for now - requires valid image file
     // await page.locator('#images').setInputFiles(testImagePath);
     
-    await page.getByText('保存').click();
+    await page.getByRole('button', { name: '保存' }).click();
     
     await expect(page).toHaveURL(`http://localhost:5173/diary/${today}`, { timeout: 10000 });
     await expect(page.getByText('测试日记 🌟')).toBeVisible();

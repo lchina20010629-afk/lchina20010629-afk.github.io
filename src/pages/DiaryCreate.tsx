@@ -89,7 +89,7 @@ export function DiaryCreate() {
       };
 
       await saveDiaryEntry(entry, password);
-      navigate('/diary');
+      navigate(`/diary/${date}`);
     } catch (err) {
       setError('保存失败: ' + (err as Error).message);
     } finally {

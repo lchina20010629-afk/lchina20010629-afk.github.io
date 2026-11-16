@@ -1,0 +1,5 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2026-11-16T19:44:27.460Z",
+  "encrypted": "{\"version\":\"v1\",\"algorithm\":\"AES-256-GCM\",\"kdf\":\"PBKDF2-SHA256\",\"salt\":\"d9fc05fa4dc1c00b67d71602f0ea767e82663f71fc4564a2ac6da2dd354760f1\",\"iv\":\"09bae39a6e5e66783251d186\",\"iterations\":600000,\"ciphertext\":\"6f6b6c0a49f56674d9d11142edeae8b16f1bf737f5d02319a294bb4474bd23da96685e009b675d29e303378e9896974a732575965c74fe5892fd862082b0d1a6c755e9c214ce53b0934bab1ea9bab68b378953e19015670b0160a92af83d3a447544e21b05d09dbcc66ad0327a53d302a15bd98a1df3da3f09f80af321f03ac852c7ec\",\"authTag\":\"9438d48668bf3f0c0ffa30d7b61bc268\"}"
+}

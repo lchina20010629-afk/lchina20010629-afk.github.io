@@ -35,6 +35,19 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const checkVaultStatus = async () => {
     const initialized = await isVaultInitialized();
     setIsInitialized(initialized);
+    
+    // Restore session if unlocked (password stored in sessionStorage during this session)
+    const sessionPwd = sessionStorage.getItem('vault_session_pwd');
+    if (initialized && sessionPwd) {
+      const verifier = await getSetting<PasswordVerifier>('password_verifier');
+      if (verifier && await verifyPassword(sessionPwd, verifier)) {
+        setIsUnlocked(true);
+        setPassword(sessionPwd);
+      } else {
+        sessionStorage.removeItem('vault_session_pwd');
+      }
+    }
+    
     setLoading(false);
   };
 
@@ -47,6 +60,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     setIsInitialized(true);
     setPassword(pwd);
     setIsUnlocked(true);
+    
+    // Store in sessionStorage for this browser session
+    sessionStorage.setItem('vault_session_pwd', pwd);
   };
 
   const unlock = async (pwd: string): Promise<boolean> => {
@@ -59,15 +75,18 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     if (valid) {
       setPassword(pwd);
       setIsUnlocked(true);
+      // Store in sessionStorage for this browser session
+      sessionStorage.setItem('vault_session_pwd', pwd);
       return true;
     }
     return false;
   };
 
   const lock = () => {
-    // Clear password from memory
+    // Clear password from memory and session
     setPassword(null);
     setIsUnlocked(false);
+    sessionStorage.removeItem('vault_session_pwd');
     
     // Revoke all blob URLs (will be implemented when we have images)
     // TODO: Track and revoke blob URLs

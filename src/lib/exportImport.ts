@@ -25,11 +25,17 @@ export async function exportAllData(password: string): Promise<Blob> {
     db.getAll('weeklyDrafts'),
     db.getAll('monthlyDrafts'),
     db.getAll('yearlyDrafts'),
-    db.getAll('settings'),
+    db.getAllKeys('settings'),
   ]);
   
-  // Filter out password verifier from settings
-  const settings = (settingsEntries as Array<[string, unknown]>).filter(([key]) => key !== 'password_verifier');
+  // Get settings values (excluding password verifier)
+  const settings: Array<[string, unknown]> = [];
+  for (const key of settingsEntries as string[]) {
+    if (key !== 'password_verifier') {
+      const value = await db.get('settings', key);
+      settings.push([key, value]);
+    }
+  }
   
   const allData = {
     diaryDrafts,
