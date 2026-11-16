@@ -35,7 +35,9 @@ test.describe('Encrypted Diary Flow', () => {
   });
 
   test('creates diary with Unicode content and photo', async ({ page }) => {
-    await page.goto('http://localhost:5173/diary');
+    // Use client-side navigation to preserve in-memory vault state
+    await page.click('a[href="/diary"]');
+    await page.waitForTimeout(200);
     await page.getByText('创建日记').click();
     
     // Wait for form to load
@@ -59,8 +61,10 @@ test.describe('Encrypted Diary Flow', () => {
   });
 
   test('views and edits existing diary entry', async ({ page }) => {
-    // Create entry first
-    await page.goto('http://localhost:5173/diary/create');
+    // Create entry first - use client-side navigation
+    await page.click('a[href="/diary"]');
+    await page.waitForTimeout(200);
+    await page.getByText('创建日记').click();
     const today = new Date().toISOString().split('T')[0];
     await page.locator('#date').fill(today);
     await page.locator('#title').fill('Original Title');
@@ -84,8 +88,10 @@ test.describe('Encrypted Diary Flow', () => {
   });
 
   test('deletes diary entry', async ({ page }) => {
-    // Create entry
-    await page.goto('http://localhost:5173/diary/create');
+    // Create entry - use client-side navigation
+    await page.click('a[href="/diary"]');
+    await page.waitForTimeout(200);
+    await page.getByText('创建日记').click();
     const today = new Date().toISOString().split('T')[0];
     await page.locator('#date').fill(today);
     await page.locator('#title').fill('Entry to Delete');
@@ -103,11 +109,14 @@ test.describe('Encrypted Diary Flow', () => {
   });
 
   test('locked vault blocks diary access', async ({ page }) => {
-    // Lock vault
-    await page.goto('http://localhost:5173/settings');
+    // Lock vault - use client-side navigation
+    await page.click('a[href="/settings"]');
+    await page.waitForTimeout(200);
     await page.getByRole('button', { name: '锁定' }).click();
     
-    await page.goto('http://localhost:5173/diary');
+    // Navigate to diary via link
+    await page.click('a[href="/diary"]');
+    await page.waitForTimeout(200);
     await expect(page.getByText('请先解锁保险库')).toBeVisible();
   });
 });

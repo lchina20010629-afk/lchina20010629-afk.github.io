@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Plus, Lock } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
 import { useVault } from '../contexts/VaultContext';
@@ -7,6 +7,7 @@ import { getAllDiaryEntries } from '../lib/diaryStorage';
 
 export function Diary() {
   const { isUnlocked } = useVault();
+  const location = useLocation();
   const [entries, setEntries] = useState<Array<{ date: string; id: string }>>([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,7 +17,7 @@ export function Diary() {
     } else {
       setLoading(false);
     }
-  }, [isUnlocked]);
+  }, [isUnlocked, location.pathname]); // Reload when navigating to this page
 
   const loadEntries = async () => {
     try {

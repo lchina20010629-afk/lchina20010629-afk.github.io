@@ -88,7 +88,8 @@ export async function importData(
   const json = decoder.decode(decrypted);
   const data = JSON.parse(json);
   
-  // Import data
+  // Import data - must re-encrypt with current vault's password
+  // because imported data may have been encrypted with different salt/iterations
   const db = await openDatabase();
   let imported = 0;
   let skipped = 0;
@@ -105,6 +106,22 @@ export async function importData(
         // Check if exists
         const existing = await db.get(store, key);
         if (existing) {
+          skipped++;
+          continue;
+        }
+      }
+      
+      // Re-encrypt entry with current vault's password
+      // Decrypt with import password, then re-encrypt with current password
+      if (item.encrypted) {
+        try {
+          const envelope: EncryptedEnvelope = JSON.parse(item.encrypted);
+          const decryptedData = await decrypt(envelope, password);
+          const reEncrypted = await encrypt(decryptedData, password);
+          item.encrypted = JSON.stringify(reEncrypted);
+        } catch (err) {
+          console.error('Failed to re-encrypt entry:', err);
+          // Skip this entry if re-encryption fails
           skipped++;
           continue;
         }
