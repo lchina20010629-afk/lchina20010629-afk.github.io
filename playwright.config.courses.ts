@@ -8,9 +8,10 @@ export default defineConfig({
   retries: 0,
   workers: 1,
   reporter: 'list',
+  globalSetup: './e2e/global-setup-courses.ts',
   
   use: {
-    baseURL: 'http://localhost:8175', // Different port to avoid conflicts
+    baseURL: 'http://localhost:8175',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
