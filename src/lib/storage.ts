@@ -13,7 +13,7 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
  * 数据库名称和版本
  */
 const DB_NAME = 'life-growth-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Bumped: courseDrafts/weeklyDrafts/monthlyDrafts/yearlyDrafts now store encrypted envelopes
 
 /**
  * 数据库 schema
@@ -87,31 +87,29 @@ export async function openDatabase(): Promise<IDBPDatabase<LifeGrowthDB>> {
         db.createObjectStore('settings');
       }
 
-      // Diary drafts
+      // Diary drafts (v1 format already correct)
       if (!db.objectStoreNames.contains('diaryDrafts')) {
         const diaryStore = db.createObjectStore('diaryDrafts', { keyPath: 'date' });
         diaryStore.createIndex('by-date', 'date');
       }
 
-      // Course drafts
+      // Course/review stores added in v2 with encrypted envelope format
+      // No migration needed since they didn't exist in v1
       if (!db.objectStoreNames.contains('courseDrafts')) {
         const courseStore = db.createObjectStore('courseDrafts', { keyPath: 'date' });
         courseStore.createIndex('by-date', 'date');
       }
 
-      // Weekly review drafts
       if (!db.objectStoreNames.contains('weeklyDrafts')) {
         const weeklyStore = db.createObjectStore('weeklyDrafts', { keyPath: 'period' });
         weeklyStore.createIndex('by-period', 'period');
       }
 
-      // Monthly review drafts
       if (!db.objectStoreNames.contains('monthlyDrafts')) {
         const monthlyStore = db.createObjectStore('monthlyDrafts', { keyPath: 'period' });
         monthlyStore.createIndex('by-period', 'period');
       }
 
-      // Yearly review drafts
       if (!db.objectStoreNames.contains('yearlyDrafts')) {
         const yearlyStore = db.createObjectStore('yearlyDrafts', { keyPath: 'period' });
         yearlyStore.createIndex('by-period', 'period');

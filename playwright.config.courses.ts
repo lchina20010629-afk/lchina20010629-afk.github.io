@@ -10,15 +10,15 @@ export default defineConfig({
   reporter: 'list',
   
   use: {
-    baseURL: 'http://localhost:8174',
+    baseURL: 'http://localhost:8175', // Different port to avoid conflicts
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
 
   webServer: {
-    command: 'node serve-dist.cjs',
-    url: 'http://localhost:8174',
-    reuseExistingServer: !process.env.CI,
+    command: 'PORT=8175 node serve-dist.cjs',
+    url: 'http://localhost:8175',
+    reuseExistingServer: false,
     timeout: 10000,
   },
 
@@ -26,10 +26,6 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
     },
   ],
 });

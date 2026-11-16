@@ -8,9 +8,9 @@ import { test, expect } from '@playwright/test';
 test.describe('Vault Management', () => {
   test.beforeEach(async ({ page, context }) => {
     await context.clearCookies();
-    await page.goto('http://localhost:5173/settings');
     
-    // Clear IndexedDB
+    // Clear IndexedDB first
+    await page.goto('http://localhost:5173/');
     await page.evaluate(async () => {
       const dbs = await indexedDB.databases();
       for (const db of dbs) {
@@ -22,8 +22,8 @@ test.describe('Vault Management', () => {
       sessionStorage.clear();
     });
     
-    // Reload to reset state
-    await page.reload();
+    // Navigate to settings after cleanup
+    await page.goto('http://localhost:5173/#/settings');
   });
 
   test('initializes vault with strong password', async ({ page }) => {

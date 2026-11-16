@@ -96,7 +96,7 @@ test.describe('Security: No Secret Persistence', () => {
     await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
 
     // Create diary with private content
-    await page.click('a[href="/diary"]');
+    await page.click('a[href="#/diary"]');
     await page.waitForTimeout(200);
     await page.getByText('创建日记').click();
     await page.waitForSelector('#date');
@@ -109,12 +109,12 @@ test.describe('Security: No Secret Persistence', () => {
     await page.waitForTimeout(1000);
 
     // Lock vault
-    await page.click('a[href="/settings"]');
+    await page.click('a[href="#/settings"]');
     await page.waitForTimeout(200);
     await page.getByRole('button', { name: '锁定' }).click();
 
     // Navigate to diary - should not show secret content
-    await page.click('a[href="/diary"]');
+    await page.click('a[href="#/diary"]');
     await page.waitForTimeout(200);
     
     const bodyText = await page.textContent('body');

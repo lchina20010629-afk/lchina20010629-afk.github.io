@@ -41,7 +41,7 @@ test.describe('Backup and Import', () => {
 
   test('exports and imports diary data', async ({ page, context }) => {
     // Create diary entry using client-side navigation
-    await page.click('a[href="/diary"]');
+    await page.click('a[href="#/diary"]');
     await page.waitForTimeout(200);
     await page.getByText('创建日记').click();
     const today = new Date().toISOString().split('T')[0];
@@ -49,10 +49,10 @@ test.describe('Backup and Import', () => {
     await page.locator('#title').fill('Test Export Entry');
     await page.locator('#content').fill('Content for export test.');
     await page.getByRole('button', { name: '保存' }).click();
-    await expect(page).toHaveURL(`http://localhost:5173/diary/${today}`);
+    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}`);
 
     // Export backup using client-side navigation
-    await page.click('a[href="/settings"]');
+    await page.click('a[href="#/settings"]');
     await page.waitForTimeout(200);
     
     const downloadPromise = page.waitForEvent('download');
@@ -81,7 +81,7 @@ test.describe('Backup and Import', () => {
 
     // Re-initialize vault with same password (full reload required re-init)
     await page.reload();
-    await page.click('a[href="/settings"]');
+    await page.click('a[href="#/settings"]');
     await page.waitForTimeout(200);
     await page.getByRole('button', { name: '初始化保险库' }).click();
     await page.locator('#password').fill(testPassword);
@@ -94,11 +94,11 @@ test.describe('Backup and Import', () => {
     await expect(page.getByText(/导入成功.*1 条新记录/)).toBeVisible({ timeout: 5000 });
 
     // Verify imported data using client-side navigation
-    await page.click('a[href="/diary"]');
+    await page.click('a[href="#/diary"]');
     await page.waitForTimeout(500); // Wait for list to load
     
     // Diary list shows dates, not titles - click on the date
-    const dateLink = page.locator(`a[href="/diary/${today}"]`);
+    const dateLink = page.locator(`a[href="#/diary/${today}"]`);
     await expect(dateLink).toBeVisible({ timeout: 5000 });
     await dateLink.click();
     
@@ -109,7 +109,7 @@ test.describe('Backup and Import', () => {
 
   test('rejects import with wrong password', async ({ page }) => {
     // Export with current password using client-side navigation
-    await page.click('a[href="/settings"]');
+    await page.click('a[href="#/settings"]');
     await page.waitForTimeout(200);
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: '导出备份' }).click();
@@ -128,7 +128,7 @@ test.describe('Backup and Import', () => {
 
   test('preserves existing data during import', async ({ page, context }) => {
     // Create first entry using client-side navigation
-    await page.click('a[href="/diary"]');
+    await page.click('a[href="#/diary"]');
     await page.waitForTimeout(200);
     await page.getByText('创建日记').click();
     const today = new Date().toISOString().split('T')[0];
@@ -142,7 +142,7 @@ test.describe('Backup and Import', () => {
     await page.waitForTimeout(500);
 
     // Export using client-side navigation
-    await page.click('a[href="/settings"]');
+    await page.click('a[href="#/settings"]');
     await page.waitForTimeout(200);
     
     // Wait for export button to be visible
@@ -155,7 +155,7 @@ test.describe('Backup and Import', () => {
     await download.saveAs(downloadPath);
 
     // Create second entry (not in backup) using client-side navigation
-    await page.click('a[href="/diary"]');
+    await page.click('a[href="#/diary"]');
     await page.waitForTimeout(200);
     await page.getByText('创建日记').click();
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
@@ -169,17 +169,17 @@ test.describe('Backup and Import', () => {
     await page.waitForTimeout(500);
 
     // Import old backup using client-side navigation
-    await page.click('a[href="/settings"]');
+    await page.click('a[href="#/settings"]');
     await page.waitForTimeout(500);
     await page.locator('input[type="file"]').setInputFiles(downloadPath);
     await expect(page.getByText(/跳过.*1 条已存在记录/)).toBeVisible({ timeout: 5000 });
 
     // Both entries should exist - verify by dates in list
-    await page.click('a[href="/diary"]');
+    await page.click('a[href="#/diary"]');
     await page.waitForTimeout(500);
     
-    const todayLink = page.locator(`a[href="/diary/${today}"]`);
-    const yesterdayLink = page.locator(`a[href="/diary/${yesterday}"]`);
+    const todayLink = page.locator(`a[href="#/diary/${today}"]`);
+    const yesterdayLink = page.locator(`a[href="#/diary/${yesterday}"]`);
     await expect(todayLink).toBeVisible();
     await expect(yesterdayLink).toBeVisible();
   });

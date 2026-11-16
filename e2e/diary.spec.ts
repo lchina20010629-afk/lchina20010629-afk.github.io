@@ -36,7 +36,7 @@ test.describe('Encrypted Diary Flow', () => {
 
   test('creates diary with Unicode content and photo', async ({ page }) => {
     // Use client-side navigation to preserve in-memory vault state
-    await page.click('a[href="/diary"]');
+    await page.click('a[href="#/diary"]');
     await page.waitForTimeout(200);
     await page.getByText('创建日记').click();
     
@@ -56,13 +56,13 @@ test.describe('Encrypted Diary Flow', () => {
     
     await page.getByRole('button', { name: '保存' }).click();
     
-    await expect(page).toHaveURL(`http://localhost:5173/diary/${today}`, { timeout: 10000 });
+    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}`, { timeout: 10000 });
     await expect(page.getByText('测试日记 🌟')).toBeVisible();
   });
 
   test('views and edits existing diary entry', async ({ page }) => {
     // Create entry first - use client-side navigation
-    await page.click('a[href="/diary"]');
+    await page.click('a[href="#/diary"]');
     await page.waitForTimeout(200);
     await page.getByText('创建日记').click();
     const today = new Date().toISOString().split('T')[0];
@@ -71,25 +71,25 @@ test.describe('Encrypted Diary Flow', () => {
     await page.locator('#content').fill('Original content here.');
     await page.getByRole('button', { name: '保存' }).click();
     
-    await expect(page).toHaveURL(`http://localhost:5173/diary/${today}`);
+    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}`);
     await expect(page.getByText('Original Title')).toBeVisible();
     
     // Edit it
     await page.getByRole('button', { name: '编辑' }).click();
-    await expect(page).toHaveURL(`http://localhost:5173/diary/${today}/edit`);
+    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}/edit`);
     
     await page.locator('#title').fill('Updated Title');
     await page.locator('#content').fill('Updated content with changes.');
     await page.getByRole('button', { name: '保存' }).click();
     
-    await expect(page).toHaveURL(`http://localhost:5173/diary/${today}`);
+    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}`);
     await expect(page.getByText('Updated Title')).toBeVisible();
     await expect(page.getByText('Updated content with changes.')).toBeVisible();
   });
 
   test('deletes diary entry', async ({ page }) => {
     // Create entry - use client-side navigation
-    await page.click('a[href="/diary"]');
+    await page.click('a[href="#/diary"]');
     await page.waitForTimeout(200);
     await page.getByText('创建日记').click();
     const today = new Date().toISOString().split('T')[0];
@@ -98,24 +98,24 @@ test.describe('Encrypted Diary Flow', () => {
     await page.locator('#content').fill('This will be deleted.');
     await page.getByRole('button', { name: '保存' }).click();
     
-    await expect(page).toHaveURL(`http://localhost:5173/diary/${today}`);
+    await expect(page).toHaveURL(`http://localhost:5173/#/diary/${today}`);
     
     // Set up dialog handler before clicking delete
     page.on('dialog', dialog => dialog.accept());
     
     await page.getByRole('button', { name: '删除' }).click();
     
-    await expect(page).toHaveURL('http://localhost:5173/diary');
+    await expect(page).toHaveURL('http://localhost:5173/#/diary');
   });
 
   test('locked vault blocks diary access', async ({ page }) => {
     // Lock vault - use client-side navigation
-    await page.click('a[href="/settings"]');
+    await page.click('a[href="#/settings"]');
     await page.waitForTimeout(200);
     await page.getByRole('button', { name: '锁定' }).click();
     
     // Navigate to diary via link
-    await page.click('a[href="/diary"]');
+    await page.click('a[href="#/diary"]');
     await page.waitForTimeout(200);
     await expect(page.getByText('请先解锁保险库')).toBeVisible();
   });
