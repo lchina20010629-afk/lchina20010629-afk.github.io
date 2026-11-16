@@ -14,14 +14,23 @@ They contain NO real user data - only synthetic test content.
 ## Usage
 
 ```bash
-# Encrypt a diary entry
-tsx scripts/encrypt-entry.ts --type diary --date 2026-11-16 \
+# Encrypt a diary entry (secure password via env var)
+VAULT_PASSWORD="TestPassword123" npx tsx scripts/encrypt-entry.ts \
+  --type diary --date 2026-11-16 \
   --input test-fixtures/diary-fixture.json \
-  --password "TestPassword123!@#Strong" \
-  --output public/data
+  --output /tmp/test-data
+
+# Or via stdin (pipe)
+echo "TestPassword123" | npx tsx scripts/encrypt-entry.ts \
+  --type diary --date 2026-11-16 \
+  --input test-fixtures/diary-fixture.json \
+  --stdin-password \
+  --output /tmp/test-data
 
 # Verify manifest created
-cat public/data/manifest.json
+cat /tmp/test-data/manifest.json
 ```
+
+**Note**: Image publishing is currently disabled. EXIF/metadata stripping must be implemented before images can be safely published.
 
 These files are NOT committed to the deployed site.

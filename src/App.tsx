@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { VaultProvider } from './contexts/VaultContext';
 import { Layout } from './components/Layout';
@@ -15,7 +15,7 @@ export function App() {
   return (
     <ThemeProvider>
       <VaultProvider>
-        <BrowserRouter>
+        <HashRouter>
           <Layout>
             <Routes>
               <Route path="/" element={<Dashboard />} />
@@ -28,7 +28,7 @@ export function App() {
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </Layout>
-        </BrowserRouter>
+        </HashRouter>
       </VaultProvider>
     </ThemeProvider>
   );

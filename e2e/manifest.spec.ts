@@ -21,23 +21,34 @@ const __dirname = dirname(__filename);
  * - No plaintext titles/content in manifest
  */
 
-const TEST_PASSWORD = 'TestPassword123!@#Strong';
+const TEST_PASSWORD = 'TestFixturePassword123';
 let staticServer: ChildProcess | null = null;
 const STATIC_PORT = 8174;
 
 test.describe('CLI → Manifest → Browser Loader', () => {
   test.beforeAll(async () => {
-    // Start simple static server with SPA fallback (NOT vite preview)
-    staticServer = spawn('node', ['test-server.js'], {
-      cwd: join(__dirname, '..'),
+    // Start simple static server (GitHub Pages simulation - no SPA fallback)
+    // Hash routing handles all navigation
+    const serverPath = join(__dirname, '..', 'serve-dist.cjs');
+    staticServer = spawn('node', [serverPath], {
       env: { ...process.env, PORT: String(STATIC_PORT) },
-      stdio: 'inherit',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: false,
     });
 
-    // Wait for server to start
+    // Wait for server to be ready
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    console.log(`Static server started on port ${STATIC_PORT}`);
+    // Verify server is responding
+    const http = await import('http');
+    await new Promise((resolve, reject) => {
+      const req = http.get(`http://localhost:${STATIC_PORT}/`, (res) => {
+        if (res.statusCode === 200) resolve(true);
+        else reject(new Error(`Server returned ${res.statusCode}`));
+      });
+      req.on('error', reject);
+      req.setTimeout(5000);
+    });
   });
 
   test.afterAll(async () => {
@@ -83,7 +94,7 @@ test.describe('CLI → Manifest → Browser Loader', () => {
   test('loads published diary entry from manifest', async ({ page, context }) => {
     // Clear all storage (NEW browser session)
     await context.clearCookies();
-    await page.goto(`http://localhost:${STATIC_PORT}/settings`);
+    await page.goto(`http://localhost:${STATIC_PORT}/#/settings`);
     
     await page.evaluate(async () => {
       const dbs = await indexedDB.databases();
@@ -135,7 +146,7 @@ test.describe('CLI → Manifest → Browser Loader', () => {
   test('deep link to published entry works on page reload', async ({ page, context }) => {
     // Clear storage
     await context.clearCookies();
-    await page.goto(`http://localhost:${STATIC_PORT}/settings`);
+    await page.goto(`http://localhost:${STATIC_PORT}/#/settings`);
     await page.evaluate(async () => {
       const dbs = await indexedDB.databases();
       for (const db of dbs) if (db.name) indexedDB.deleteDatabase(db.name);
@@ -149,8 +160,8 @@ test.describe('CLI → Manifest → Browser Loader', () => {
     await page.getByRole('button', { name: '确认初始化' }).click();
     await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
 
-    // Navigate directly to diary detail via deep link
-    await page.goto(`http://localhost:${STATIC_PORT}/diary/2026-11-16`);
+    // Navigate directly to diary detail via deep link (hash routing)
+    await page.goto(`http://localhost:${STATIC_PORT}/#/diary/2026-11-16`);
     await page.waitForTimeout(500);
 
     // Full page reload should lock vault
@@ -178,7 +189,7 @@ test.describe('CLI → Manifest → Browser Loader', () => {
 
   test('rejects wrong password for published entries', async ({ page, context }) => {
     await context.clearCookies();
-    await page.goto(`http://localhost:${STATIC_PORT}/settings`);
+    await page.goto(`http://localhost:${STATIC_PORT}/#/settings`);
     await page.evaluate(async () => {
       const dbs = await indexedDB.databases();
       for (const db of dbs) if (db.name) indexedDB.deleteDatabase(db.name);
@@ -216,7 +227,7 @@ test.describe('CLI → Manifest → Browser Loader', () => {
   test('merges published and local drafts without overwrite', async ({ page, context }) => {
     // Clear storage
     await context.clearCookies();
-    await page.goto(`http://localhost:${STATIC_PORT}/settings`);
+    await page.goto(`http://localhost:${STATIC_PORT}/#/settings`);
     await page.evaluate(async () => {
       const dbs = await indexedDB.databases();
       for (const db of dbs) if (db.name) indexedDB.deleteDatabase(db.name);

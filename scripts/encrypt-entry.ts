@@ -3,9 +3,13 @@
  * CLI tool to encrypt diary/course/review entries and update manifest
  * 
  * Usage:
- *   tsx scripts/encrypt-entry.ts --type diary --date 2026-11-16 --input entry.json --password "..."
- *   tsx scripts/encrypt-entry.ts --type course --date 2026-11-16 --input course.json --password "..."
- *   tsx scripts/encrypt-entry.ts --type weekly --period 2026-W46 --input weekly.json --password "..."
+ *   VAULT_PASSWORD="..." tsx scripts/encrypt-entry.ts --type diary --date 2026-11-16 --input entry.json
+ *   echo "password" | tsx scripts/encrypt-entry.ts --type course --date 2026-11-16 --input course.json --stdin-password
+ *   tsx scripts/encrypt-entry.ts --type weekly --period 2026-W46 --input weekly.json
+ * 
+ * Password sources (in order of precedence):
+ *   1. --stdin-password flag: Read from stdin (secure for piping)
+ *   2. VAULT_PASSWORD environment variable
  * 
  * Input JSON format:
  * {
@@ -21,9 +25,8 @@
  */
 
 import { readFile, writeFile, mkdir } from 'fs/promises';
-import { join, basename, extname } from 'path';
+import { join, basename } from 'path';
 import { createHash, pbkdf2Sync, randomBytes } from 'crypto';
-import * as ExifReader from 'exifreader';
 
 interface InputEntry {
   title: string;
@@ -138,62 +141,70 @@ async function encrypt(data: Buffer, password: string): Promise<EncryptedEnvelop
   };
 }
 
-/**
- * Strip EXIF data from image
- */
-async function stripExif(imagePath: string): Promise<Buffer> {
-  const imageData = await readFile(imagePath);
-  
-  // Check if image has EXIF
-  try {
-    const tags = ExifReader.load(imageData);
-    if (Object.keys(tags).length > 0) {
-      console.log(`  ⚠️  EXIF data found in ${basename(imagePath)}, stripping...`);
-    }
-  } catch {
-    // No EXIF or unreadable
-  }
-  
-  // For now, return as-is (full EXIF stripping requires image processing library)
-  // In production, use sharp or similar to re-encode without metadata
-  return imageData;
-}
+// EXIF stripping not yet implemented - images currently disabled
+// TODO: Implement with sharp or similar library for safe re-encoding
 
 /**
- * Encrypt image file
+ * Encrypt image file (currently disabled - see main())
+ * TODO: Implement proper EXIF/metadata stripping before re-enabling
  */
-async function encryptImage(imagePath: string, password: string, outputDir: string): Promise<{ id: string; path: string; type: string }> {
-  console.log(`  📸 Encrypting image: ${basename(imagePath)}`);
+// async function encryptImage(imagePath: string, password: string, outputDir: string): Promise<{ id: string; path: string; type: string }> {
+//   console.log(`  📸 Encrypting image: ${basename(imagePath)}`);
+//   
+//   // Strip EXIF
+//   const imageData = await stripExif(imagePath);
+//   
+//   // Encrypt
+//   const encrypted = await encrypt(imageData, password);
+//   
+//   // Generate ID and output path
+//   const id = `img-${Date.now()}-${randomBytes(4).toString('hex')}`;
+//   const ext = extname(imagePath);
+//   const outputPath = join(outputDir, `${id}.enc`);
+//   
+//   // Write encrypted data
+//   await writeFile(outputPath, JSON.stringify(encrypted));
+//   
+//   // Determine MIME type
+//   const mimeTypes: Record<string, string> = {
+//     '.jpg': 'image/jpeg',
+//     '.jpeg': 'image/jpeg',
+//     '.png': 'image/png',
+//     '.gif': 'image/gif',
+//     '.webp': 'image/webp',
+//   };
+//   const type = mimeTypes[ext.toLowerCase()] || 'application/octet-stream';
+//   
+//   return {
+//     id,
+//     path: `encrypted/${basename(outputPath)}`,
+//     type,
+//   };
+// }
+
+/**
+ * Read password securely from stdin or environment
+ */
+async function readPassword(useStdin: boolean): Promise<string> {
+  if (useStdin) {
+    // Read from stdin
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) {
+      chunks.push(chunk);
+    }
+    const password = Buffer.concat(chunks).toString('utf-8').trim();
+    if (!password) {
+      throw new Error('No password provided on stdin');
+    }
+    return password;
+  }
   
-  // Strip EXIF
-  const imageData = await stripExif(imagePath);
-  
-  // Encrypt
-  const encrypted = await encrypt(imageData, password);
-  
-  // Generate ID and output path
-  const id = `img-${Date.now()}-${randomBytes(4).toString('hex')}`;
-  const ext = extname(imagePath);
-  const outputPath = join(outputDir, `${id}.enc`);
-  
-  // Write encrypted data
-  await writeFile(outputPath, JSON.stringify(encrypted));
-  
-  // Determine MIME type
-  const mimeTypes: Record<string, string> = {
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.png': 'image/png',
-    '.gif': 'image/gif',
-    '.webp': 'image/webp',
-  };
-  const type = mimeTypes[ext.toLowerCase()] || 'application/octet-stream';
-  
-  return {
-    id,
-    path: `encrypted/${basename(outputPath)}`,
-    type,
-  };
+  // Read from environment variable
+  const password = process.env.VAULT_PASSWORD;
+  if (!password) {
+    throw new Error('Password required: set VAULT_PASSWORD environment variable or use --stdin-password');
+  }
+  return password;
 }
 
 /**
@@ -205,18 +216,22 @@ async function main() {
     const index = args.indexOf(name);
     return index >= 0 ? args[index + 1] : undefined;
   };
+  const hasFlag = (name: string): boolean => args.includes(name);
   
   const type = getArg('--type') as 'diary' | 'course' | 'weekly' | 'monthly' | 'yearly' | undefined;
   const date = getArg('--date');
   const period = getArg('--period');
   const inputPath = getArg('--input');
-  const password = getArg('--password');
   const outputDir = getArg('--output') || 'public/data';
+  const useStdin = hasFlag('--stdin-password');
   
-  if (!type || !inputPath || !password) {
-    console.error('Usage: tsx scripts/encrypt-entry.ts --type <type> --date <date> --input <input.json> --password <password> [--output <dir>]');
+  if (!type || !inputPath) {
+    console.error('Usage: VAULT_PASSWORD="..." tsx scripts/encrypt-entry.ts --type <type> --date <date> --input <input.json> [--output <dir>]');
+    console.error('   or: echo "password" | tsx scripts/encrypt-entry.ts ... --stdin-password');
     process.exit(1);
   }
+  
+  const password = await readPassword(useStdin);
   
   if (type !== 'diary' && type !== 'course' && type !== 'weekly' && type !== 'monthly' && type !== 'yearly') {
     console.error('Invalid type. Must be: diary, course, weekly, monthly, or yearly');
@@ -238,17 +253,14 @@ async function main() {
   const encryptedDir = join(outputDir, 'encrypted');
   await mkdir(encryptedDir, { recursive: true });
   
-  // Encrypt images
+  // Image publishing currently disabled - EXIF stripping not yet implemented
+  // TODO: Implement proper EXIF/metadata stripping with image re-encoding before enabling
   const attachments: Array<{ id: string; encryptedPath: string; type: string }> = [];
-  if (input.images) {
-    for (const imagePath of input.images) {
-      const encrypted = await encryptImage(imagePath, password, encryptedDir);
-      attachments.push({
-        id: encrypted.id,
-        encryptedPath: encrypted.path,
-        type: encrypted.type,
-      });
-    }
+  if (input.images && input.images.length > 0) {
+    console.error('\n❌ ERROR: Image publishing is currently disabled.');
+    console.error('   EXIF/metadata stripping must be implemented before publishing images.');
+    console.error('   Remove "images" field from input JSON or implement safe stripping.');
+    process.exit(1);
   }
   
   // Create entry envelope
