@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "vault": {
+    "version": "1.0.0",
+    "verifier": {
+      "salt": "",
+      "verifier": "",
+      "iterations": 600000
+    },
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  "entries": [],
+  "generatedAt": "2024-01-01T00:00:00.000Z"
+}

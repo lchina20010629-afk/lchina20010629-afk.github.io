@@ -1,0 +1,9 @@
+{
+  "id": "test-diary-2026-11-16",
+  "title": "测试日记 Unicode Test",
+  "content": "这是一个测试日记。包含中文、English、特殊字符 ♥♦♣♠ 和 emoji 🌟🎉。\n\n今天学习了很多知识。",
+  "mood": "开心",
+  "weather": "晴",
+  "tags": ["测试", "学习", "成长"],
+  "images": []
+}

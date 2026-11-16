@@ -1,0 +1,23 @@
+{
+  "id": "test-course-2026-11-16",
+  "courses": [
+    {
+      "name": "英语",
+      "targetMinutes": 10,
+      "actualMinutes": 12,
+      "completed": true,
+      "materials": ["剑桥英语初级", "BBC Learning English"],
+      "reflection": "今天学习了新单词：achievement, perseverance"
+    },
+    {
+      "name": "泰语",
+      "targetMinutes": 8,
+      "actualMinutes": 8,
+      "completed": true,
+      "materials": ["泰语基础"],
+      "reflection": "练习了日常对话"
+    }
+  ],
+  "totalMinutes": 20,
+  "notes": "总体进展顺利，需要加强口语练习"
+}

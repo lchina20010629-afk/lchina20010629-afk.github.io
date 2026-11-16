@@ -1,0 +1,52 @@
+{
+  "name": "life-growth-dashboard",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "exifreader": "^4.54.0",
+    "idb": "^8.0.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@playwright/test": "^1.65.1",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^6.3.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "exif-parser": "^0.1.12",
+    "globals": "^15.14.0",
+    "http-server": "^14.1.1",
+    "jsdom": "^25.0.1",
+    "playwright": "^1.65.1",
+    "sharp": "^0.35.5",
+    "tsx": "^4.23.15",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.20.0",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  }
+}

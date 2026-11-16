@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, cursor/* ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+      with:
+        node-version: '22.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: TypeScript check
+      run: npx tsc -b
+      
+    - name: Security audit
+      run: npm audit --audit-level=high
+      continue-on-error: false
+      
+    - name: Unit tests
+      run: npm test
+      
+    - name: Build
+      run: npm run build
+      
+    - name: Verify public/data preserved in dist
+      run: |
+        if [ ! -f "dist/data/manifest.json" ]; then
+          echo "ERROR: dist/data/manifest.json missing after build"
+          exit 1
+        fi
+        echo "✓ public/data correctly copied to dist/data"
+        
+    - name: Backup production dist for restoration
+      run: cp -r dist dist-production
+      
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps chromium
+      
+    - name: Base E2E tests
+      run: npx playwright test
+      
+    - name: Generate manifest fixtures
+      run: ./e2e/generate-test-manifest.sh
+      
+    - name: Replace dist with test fixtures
+      run: |
+        rm -rf dist/data
+        cp -r /tmp/test-manifest-data dist/data
+      
+    - name: Manifest E2E tests
+      run: npx playwright test --config=playwright.config.manifest.ts
+      
+    - name: Generate course fixtures
+      run: ./e2e/generate-course-fixtures.sh
+      
+    - name: Replace dist with test fixtures
+      run: |
+        rm -rf dist/data
+        cp -r /tmp/test-course-fixtures dist/data
+      
+    - name: Course/Review E2E tests
+      run: npx playwright test --config=playwright.config.courses.ts
+      
+    - name: Restore production dist for photo tests
+      run: |
+        rm -rf dist/data
+        cp -r dist-production/data dist/data
+      
+    - name: Photo E2E tests
+      run: npx playwright test --config=playwright.config.photos.ts
+      
+    - name: Restore production dist
+      run: |
+        rm -rf dist
+        mv dist-production dist
+        
+    - name: Final verification - deployment artifact intact
+      run: |
+        if [ ! -f "dist/data/manifest.json" ]; then
+          echo "ERROR: Production dist/data corrupted"
+          exit 1
+        fi
+        echo "✓ Production dist/data preserved for deployment"
+        
+    - name: Upload test artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+      with:
+        name: test-results
+        path: test-results/
+        retention-days: 7
