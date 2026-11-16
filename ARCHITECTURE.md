@@ -3,12 +3,12 @@
 ## 执行时间
 2026年11月16日
 
-## 当前稳定版本调研
-- **Vite**: 8.3.8 (当前稳定版)
-- **React**: 19.3.1 (当前稳定版)
-- **TypeScript**: 7.0.2 (当前稳定版)
-- **Vitest**: 5.1.0 (测试框架)
-- **React Router DOM**: 7.18.5 (路由)
+## 实际安装版本 (已验证 package-lock.json)
+- **React**: 19.3.1
+- **TypeScript**: 5.7.3
+- **Vite**: 6.4.6
+- **Vitest**: 2.1.9
+- **React Router DOM**: 7.18.5
 
 ## 核心架构决策
 
@@ -24,10 +24,10 @@
 - ✅ 轻量级，无需服务端
 
 **拒绝的替代方案**:
-- ❌ Next.js/Nuxt: 需要服务端渲染，不适合纯静态GitHub Pages
-- ❌ Gatsby: 过于重量级，构建复杂度高
-- ❌ Astro: 生态较新，中文资源少，风险较高
-- ❌ Vue: 用户可能更熟悉React生态
+- ❌ Next.js: 虽支持静态导出(next export)，但优化面向服务端场景，配置复杂度高
+- ❌ Nuxt: Vue生态，与项目React技能栈不匹配
+- ❌ Gatsby: 过于重量级，GraphQL数据层对简单静态站点过度设计
+- ❌ Astro: 虽然成熟且适合静态站点，但React生态系统更丰富，社区支持更广
 
 ### 2. 加密方案
 **选择**: Web Crypto API (浏览器) + Node.js crypto (CLI)
