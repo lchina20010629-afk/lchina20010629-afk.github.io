@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useVault } from '../contexts/VaultContext';
 import { loadDiaryEntry, deleteDiaryEntry, decryptImageToBlobUrl } from '../lib/diaryStorage';
 import { revokeBlobUrl } from '../lib/imageProcessing';
+import { fetchManifest, loadPublishedEntry } from '../lib/manifestLoader';
 import type { DiaryEntry } from '../types/crypto';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 
@@ -15,6 +16,7 @@ export function DiaryDetail() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  // const [isPublished, setIsPublished] = useState(false);
 
   useEffect(() => {
     if (!isUnlocked || !password || !date) {
@@ -43,25 +45,73 @@ export function DiaryDetail() {
     if (!password || !date) return;
 
     try {
-      const loaded = await loadDiaryEntry(date, password);
-      if (loaded) {
-        setEntry(loaded);
-        
-        // Decrypt images
-        if (loaded.images && loaded.images.length > 0) {
-          const urls = new Map<string, string>();
-          for (const img of loaded.images) {
-            if (img.encryptedPath) {
-              try {
-                const blobUrl = await decryptImageToBlobUrl(img.encryptedPath, password);
-                urls.set(img.id, blobUrl);
-              } catch (err) {
-                console.error('Failed to decrypt image:', err);
+      // Try loading from local storage first
+      try {
+        const loaded = await loadDiaryEntry(date, password);
+        if (loaded) {
+          setEntry(loaded);
+          // setIsPublished(false);
+          
+          // Decrypt images
+          if (loaded.images && loaded.images.length > 0) {
+            const urls = new Map<string, string>();
+            for (const img of loaded.images) {
+              if (img.encryptedPath) {
+                try {
+                  const blobUrl = await decryptImageToBlobUrl(img.encryptedPath, password);
+                  urls.set(img.id, blobUrl);
+                } catch (err) {
+                  console.error('Failed to decrypt image:', err);
+                }
               }
             }
+            setImageBlobUrls(urls);
           }
-          setImageBlobUrls(urls);
+          setLoading(false);
+          return;
         }
+      } catch (localErr) {
+        // Not in local storage, try published
+        console.log('Not in local storage, trying published manifest...');
+      }
+
+      // Try loading from published manifest
+      const manifest = await fetchManifest('/data');
+      const metadata = manifest.entries.find(e => e.type === 'diary' && e.date === date);
+      
+      if (!metadata) {
+        setError('日记不存在');
+        setLoading(false);
+        return;
+      }
+
+      const published = await loadPublishedEntry(metadata, password, '/data');
+      
+      // Convert to DiaryEntry format
+      setEntry({
+        id: published.id,
+        date: published.date,
+        title: published.title,
+        content: published.content,
+        mood: published.mood,
+        weather: published.weather,
+        tags: published.tags,
+        images: published.images?.map(img => ({
+          id: img.id,
+          encryptedPath: img.blobUrl, // Use blobUrl for display
+        })),
+        created: published.publishedAt,
+        modified: published.publishedAt,
+      });
+      // setIsPublished(true);
+      
+      // Blob URLs already created by loadPublishedEntry
+      if (published.images) {
+        const urls = new Map<string, string>();
+        for (const img of published.images) {
+          urls.set(img.id, img.blobUrl);
+        }
+        setImageBlobUrls(urls);
       }
     } catch (err) {
       setError('加载失败: ' + (err as Error).message);
