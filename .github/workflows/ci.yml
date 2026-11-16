@@ -40,6 +40,17 @@ jobs:
     - name: Build
       run: npm run build
       
+    - name: Verify public/data preserved in dist
+      run: |
+        if [ ! -f "dist/data/manifest.json" ]; then
+          echo "ERROR: dist/data/manifest.json missing after build"
+          exit 1
+        fi
+        echo "✓ public/data correctly copied to dist/data"
+        
+    - name: Backup production dist for restoration
+      run: cp -r dist dist-production
+      
     - name: Install Playwright browsers
       run: npx playwright install --with-deps chromium
       
@@ -49,7 +60,7 @@ jobs:
     - name: Generate manifest fixtures
       run: ./e2e/generate-test-manifest.sh
       
-    - name: Copy manifest fixtures to dist
+    - name: Replace dist with test fixtures
       run: |
         rm -rf dist/data
         cp -r /tmp/test-manifest-data dist/data
@@ -60,7 +71,7 @@ jobs:
     - name: Generate course fixtures
       run: ./e2e/generate-course-fixtures.sh
       
-    - name: Copy course fixtures to dist
+    - name: Replace dist with test fixtures
       run: |
         rm -rf dist/data
         cp -r /tmp/test-course-fixtures dist/data
@@ -71,10 +82,18 @@ jobs:
     - name: Photo E2E tests
       run: npx playwright test --config=playwright.config.photos.ts
       
-    - name: Clean deployment data
+    - name: Restore production dist
       run: |
-        rm -rf dist/data
-        mkdir -p dist/data
+        rm -rf dist
+        mv dist-production dist
+        
+    - name: Final verification - deployment artifact intact
+      run: |
+        if [ ! -f "dist/data/manifest.json" ]; then
+          echo "ERROR: Production dist/data corrupted"
+          exit 1
+        fi
+        echo "✓ Production dist/data preserved for deployment"
         
     - name: Upload test artifacts on failure
       if: failure()
