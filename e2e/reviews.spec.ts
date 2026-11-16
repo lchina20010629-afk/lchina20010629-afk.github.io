@@ -89,7 +89,8 @@ test.describe('Review Features', () => {
   });
 
   test('should allow editing draft review', async ({ page }) => {
-    await page.goto('/#/reviews/weekly/2099-W99');
+    // Use valid future ISO week (W01 is always valid)
+    await page.goto('/#/reviews/weekly/2099-W01');
     await page.waitForTimeout(1000);
     
     // Should create new draft
@@ -97,16 +98,28 @@ test.describe('Review Features', () => {
     await expect(titleInput).toBeVisible({ timeout: 10000 });
     await expect(titleInput).not.toBeDisabled();
     
-    await titleInput.fill('Test Week Review');
-    await page.locator('textarea#content').fill('This is a test review');
+    await titleInput.fill('2099年第1周复盘');
+    await page.locator('textarea#content').fill('这是一个测试复盘内容。');
     await page.locator('button:has-text("保存")').click();
     await page.waitForTimeout(500);
     
-    // Reload - should persist
-    await page.reload();
+    // Lock and unlock to verify persistence
+    await page.goto('/#/settings');
+    await page.locator('button:has-text("锁定")').click();
+    await page.waitForTimeout(500);
+    
+    // Unlock
+    await page.getByRole('button', { name: '解锁' }).first().click();
+    await page.waitForTimeout(200);
+    await page.locator('#unlock-password').fill(TEST_PASSWORD);
+    await page.locator('form').filter({ hasText: '密码' }).getByRole('button', { name: '解锁' }).click();
+    await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
+    
+    // Navigate back - should persist
+    await page.goto('/#/reviews/weekly/2099-W01');
     await page.waitForTimeout(1000);
-    await expect(page.locator('input#title')).toHaveValue('Test Week Review', { timeout: 10000 });
-    await expect(page.locator('textarea#content')).toHaveValue('This is a test review');
+    await expect(page.locator('input#title')).toHaveValue('2099年第1周复盘', { timeout: 10000 });
+    await expect(page.locator('textarea#content')).toHaveValue('这是一个测试复盘内容。');
   });
 
   test('should clear reviews on lock', async ({ page }) => {
@@ -134,5 +147,26 @@ test.describe('Review Features', () => {
     await expect(quickButtons.nth(0)).toContainText('W'); // weekly: YYYY-Www
     await expect(quickButtons.nth(1)).toContainText('-'); // monthly: YYYY-MM
     await expect(quickButtons.nth(2)).toHaveAttribute('href', /#\/reviews\/yearly\/\d{4}$/); // yearly: YYYY
+  });
+
+  test('should capture screenshots of review detail', async ({ page }) => {
+    // Navigate to weekly review
+    await page.goto('/#/reviews/weekly/2024-W11');
+    await page.waitForTimeout(1000);
+    
+    // Wait for content to load - title is in input field
+    const titleInput = page.locator('input#title');
+    await expect(titleInput).toBeVisible({ timeout: 10000 });
+    await expect(titleInput).toHaveValue('第11周总结');
+    
+    // Desktop screenshot
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: '/opt/cursor/artifacts/review-detail-desktop.png', fullPage: true });
+    
+    // Mobile screenshot
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: '/opt/cursor/artifacts/review-detail-mobile.png', fullPage: true });
   });
 });

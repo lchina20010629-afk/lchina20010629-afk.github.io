@@ -25,8 +25,9 @@
  */
 
 import { readFile, writeFile, mkdir } from 'fs/promises';
-import { join, basename } from 'path';
+import { join, basename, extname } from 'path';
 import { createHash, pbkdf2Sync, randomBytes } from 'crypto';
+import sharp from 'sharp';
 
 interface InputEntry {
   title: string;
@@ -141,8 +142,49 @@ async function encrypt(data: Buffer, password: string): Promise<EncryptedEnvelop
   };
 }
 
-// EXIF stripping not yet implemented - images currently disabled
-// TODO: Implement with sharp or similar library for safe re-encoding
+/**
+ * Strip EXIF/GPS/XMP metadata from image by re-encoding
+ * Returns safe JPEG/PNG with bounded size
+ */
+async function stripImageMetadata(imagePath: string): Promise<Buffer> {
+  const ext = extname(imagePath).toLowerCase();
+  
+  // Validate MIME type
+  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp'];
+  if (!allowedExts.includes(ext)) {
+    throw new Error(`Unsupported image format: ${ext}. Allowed: ${allowedExts.join(', ')}`);
+  }
+  
+  const imageBuffer = await readFile(imagePath);
+  
+  // Re-encode with sharp to strip all metadata
+  // NOTE: Do NOT call .withMetadata() - that preserves/adds metadata
+  // Simply re-encoding without it strips EXIF/GPS/XMP
+  const pipeline = sharp(imageBuffer)
+    .resize(2048, 2048, {
+      fit: 'inside',
+      withoutEnlargement: true,
+    });
+  
+  // Convert to appropriate format
+  let output: Buffer;
+  if (ext === '.png') {
+    output = await pipeline.png({ quality: 90 }).toBuffer();
+  } else if (ext === '.webp') {
+    output = await pipeline.webp({ quality: 85 }).toBuffer();
+  } else {
+    // Default to JPEG for jpg/jpeg
+    output = await pipeline.jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+  }
+  
+  // Enforce size limit (5MB)
+  const MAX_SIZE = 5 * 1024 * 1024;
+  if (output.length > MAX_SIZE) {
+    throw new Error(`Image too large after processing: ${(output.length / 1024 / 1024).toFixed(2)}MB (max 5MB)`);
+  }
+  
+  return output;
+}
 
 /**
  * Encrypt image file (currently disabled - see main())
@@ -253,14 +295,40 @@ async function main() {
   const encryptedDir = join(outputDir, 'encrypted');
   await mkdir(encryptedDir, { recursive: true });
   
-  // Image publishing currently disabled - EXIF stripping not yet implemented
-  // TODO: Implement proper EXIF/metadata stripping with image re-encoding before enabling
+  // Process images: strip EXIF/GPS/XMP, encrypt, and save
   const attachments: Array<{ id: string; encryptedPath: string; type: string }> = [];
   if (input.images && input.images.length > 0) {
-    console.error('\n❌ ERROR: Image publishing is currently disabled.');
-    console.error('   EXIF/metadata stripping must be implemented before publishing images.');
-    console.error('   Remove "images" field from input JSON or implement safe stripping.');
-    process.exit(1);
+    console.log(`\n📷 Processing ${input.images.length} image(s)...`);
+    for (const imagePath of input.images) {
+      try {
+        // Strip metadata
+        console.log(`   Stripping metadata from ${basename(imagePath)}...`);
+        const cleanImageBuffer = await stripImageMetadata(imagePath);
+        
+        // Encrypt
+        const encryptedImage = encryptBuffer(cleanImageBuffer, key);
+        
+        // Generate image ID and path
+        const imageId = `img_${Date.now()}_${randomBytes(4).toString('hex')}`;
+        const ext = extname(imagePath);
+        const encryptedFileName = `${imageId}${ext}.enc`;
+        const encryptedPath = join(outputDir, encryptedFileName);
+        
+        // Save encrypted image
+        await writeFile(encryptedPath, JSON.stringify(encryptedImage), 'utf-8');
+        
+        attachments.push({
+          id: imageId,
+          encryptedPath: `data/${encryptedFileName}`,
+          type: `image/${ext.slice(1)}`, // .jpg -> image/jpg
+        });
+        
+        console.log(`   ✓ Encrypted: ${encryptedFileName}`);
+      } catch (err) {
+        console.error(`   ✗ Failed to process ${basename(imagePath)}: ${err instanceof Error ? err.message : String(err)}`);
+        throw err;
+      }
+    }
   }
   
   // Create entry envelope

@@ -40,7 +40,8 @@ export async function saveCourseRecord(record: CourseRecord, password: string): 
   const db = await openDatabase();
   
   const json = JSON.stringify(record);
-  const encrypted = await encrypt(Buffer.from(json, 'utf-8'), password);
+  const encoder = new TextEncoder();
+  const encrypted = await encrypt(encoder.encode(json), password);
   
   await db.put('courseDrafts', {
     date: record.date,

@@ -27,7 +27,8 @@ export async function saveReviewRecord(record: ReviewRecord, password: string): 
   const storeName = `${record.type}Drafts` as 'weeklyDrafts' | 'monthlyDrafts' | 'yearlyDrafts';
   
   const json = JSON.stringify(record);
-  const encrypted = await encrypt(Buffer.from(json, 'utf-8'), password);
+  const encoder = new TextEncoder();
+  const encrypted = await encrypt(encoder.encode(json), password);
   
   await db.put(storeName, {
     period: record.period,

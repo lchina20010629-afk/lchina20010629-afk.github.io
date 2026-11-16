@@ -7,6 +7,10 @@ const FIXTURES_DIR = '/tmp/test-course-fixtures';
 
 test.describe('Course/Learning Features', () => {
   test.beforeEach(async ({ page, context }) => {
+    // Capture console logs
+    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+    page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
+    
     // Clear browser state only
     await context.clearCookies();
     await page.goto('/#/settings');
@@ -71,22 +75,37 @@ test.describe('Course/Learning Features', () => {
     await page.goto(`/#/learning/${today}`);
     await page.waitForTimeout(1000);
     
-    // Wait for page to load - should show course columns
-    await expect(page.locator('text=English')).toBeVisible({ timeout: 10000 });
+    // Wait for page to load - should show course columns with Chinese labels
+    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=泰语')).toBeVisible();
     
-    // All courses start uncompleted - look for checkboxes or toggle buttons
-    const firstToggle = page.locator('.completion-toggle').first();
-    await expect(firstToggle).toBeVisible({ timeout: 5000 });
+    // All courses start uncompleted - verify first toggle shows 未完成
+    await expect(page.locator('.completion-toggle').first().locator('text=未完成')).toBeVisible({ timeout: 5000 });
     
     // Toggle completion
-    await firstToggle.click();
+    await page.locator('.completion-toggle').first().click();
+    await page.waitForTimeout(1000); // Wait for save
+    
+    // Re-query DOM after state update - should now show 已完成
+    await expect(page.locator('.completion-toggle').first().locator('text=已完成')).toBeVisible({ timeout: 5000 });
+    
+    // Lock and reload - vault password is memory-only, so need to unlock again
+    await page.goto('/#/settings');
+    await page.locator('button:has-text("锁定")').click();
     await page.waitForTimeout(500);
     
-    // Reload page - should persist
-    await page.reload();
+    // Unlock again
+    await page.getByRole('button', { name: '解锁' }).first().click();
+    await page.waitForTimeout(200);
+    await page.locator('#unlock-password').fill(TEST_PASSWORD);
+    await page.locator('form').filter({ hasText: '密码' }).getByRole('button', { name: '解锁' }).click();
+    await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
+    
+    // Navigate back - should persist
+    await page.goto(`/#/learning/${today}`);
     await page.waitForTimeout(1000);
-    // Just verify the toggle is still there and clickable
-    await expect(firstToggle).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.completion-toggle').first().locator('text=已完成')).toBeVisible({ timeout: 5000 });
   });
 
   test('should store and display reflection locally', async ({ page }) => {
@@ -95,18 +114,31 @@ test.describe('Course/Learning Features', () => {
     await page.waitForTimeout(1000);
     
     // Wait for page to load
-    await expect(page.locator('text=English')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
     
-    // Enter reflection in first column
+    // Enter reflection in first column (auto-saves on change)
     const textarea = page.locator('textarea').first();
     await expect(textarea).toBeVisible({ timeout: 5000 });
-    await textarea.fill('Great progress on grammar today!');
+    await textarea.fill('今天语法学习进步很大！');
     await page.waitForTimeout(1000); // Wait for auto-save
     
-    // Reload - should persist
-    await page.reload();
+    // Lock and unlock to verify persistence
+    await page.goto('/#/settings');
+    await page.locator('button:has-text("锁定")').click();
+    await page.waitForTimeout(500);
+    
+    // Unlock
+    await page.getByRole('button', { name: '解锁' }).first().click();
+    await page.waitForTimeout(200);
+    await page.locator('#unlock-password').fill(TEST_PASSWORD);
+    await page.locator('form').filter({ hasText: '密码' }).getByRole('button', { name: '解锁' }).click();
+    await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
+    
+    // Navigate back - should persist
+    await page.goto(`/#/learning/${today}`);
     await page.waitForTimeout(1000);
-    await expect(page.locator('textarea').first()).toHaveValue('Great progress on grammar today!', { timeout: 10000 });
+    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('textarea').first()).toHaveValue('今天语法学习进步很大！', { timeout: 10000 });
   });
 
   test('should clear course data on lock', async ({ page }) => {
@@ -151,5 +183,25 @@ test.describe('Course/Learning Features', () => {
     // Courses should remain locked
     await page.goto('/#/learning');
     await expect(page.locator('text=请先解锁保险库')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('should capture screenshots of course detail with feedback', async ({ page, browser }) => {
+    // Navigate to published course with feedback
+    await page.goto('/#/learning/2024-03-16');
+    await page.waitForTimeout(1000);
+    
+    // Wait for content to load
+    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=TED Talk')).toBeVisible();
+    
+    // Desktop screenshot
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-desktop.png', fullPage: true });
+    
+    // Mobile screenshot
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-mobile.png', fullPage: true });
   });
 });
