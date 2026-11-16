@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, cursor/* ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+      with:
+        node-version: '22.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: TypeScript check
+      run: npx tsc -b
+      
+    - name: Security audit
+      run: npm audit --audit-level=high
+      continue-on-error: false
+      
+    - name: Unit tests
+      run: npm test
+      
+    - name: Build
+      run: npm run build
+      
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps chromium
+      
+    - name: Base E2E tests
+      run: npx playwright test
+      
+    - name: Generate manifest fixtures
+      run: ./e2e/generate-test-manifest.sh
+      
+    - name: Copy manifest fixtures to dist
+      run: |
+        rm -rf dist/data
+        cp -r /tmp/test-manifest-data dist/data
+      
+    - name: Manifest E2E tests
+      run: npx playwright test --config=playwright.config.manifest.ts
+      
+    - name: Generate course fixtures
+      run: ./e2e/generate-course-fixtures.sh
+      
+    - name: Copy course fixtures to dist
+      run: |
+        rm -rf dist/data
+        cp -r /tmp/test-course-fixtures dist/data
+      
+    - name: Course/Review E2E tests
+      run: npx playwright test --config=playwright.config.courses.ts
+      
+    - name: Photo E2E tests
+      run: npx playwright test --config=playwright.config.photos.ts
+      
+    - name: Clean deployment data
+      run: |
+        rm -rf dist/data
+        mkdir -p dist/data
+        
+    - name: Upload test artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+      with:
+        name: test-results
+        path: test-results/
+        retention-days: 7
