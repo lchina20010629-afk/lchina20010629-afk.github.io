@@ -9,7 +9,6 @@
 
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import type {
-  DiaryEntry,
   CourseRecord,
   WeeklyReview,
   MonthlyReview,
@@ -32,7 +31,11 @@ interface LifeGrowthDB extends DBSchema {
   };
   diaryDrafts: {
     key: string; // date (YYYY-MM-DD)
-    value: DiaryEntry;
+    value: {
+      date: string;
+      id: string;
+      encrypted: string; // JSON stringified EncryptedEnvelope
+    };
     indexes: { 'by-date': string };
   };
   courseDrafts: {
@@ -164,29 +167,7 @@ export async function setTheme(theme: 'light' | 'dark' | 'system'): Promise<void
 }
 
 // ===== Diary Drafts =====
-
-export async function saveDiaryDraft(entry: DiaryEntry): Promise<void> {
-  if (!await isVaultInitialized()) {
-    throw new Error('保险库未初始化，无法保存个人内容。请先初始化保险库。');
-  }
-  const db = await openDatabase();
-  await db.put('diaryDrafts', entry);
-}
-
-export async function getDiaryDraft(date: string): Promise<DiaryEntry | undefined> {
-  const db = await openDatabase();
-  return db.get('diaryDrafts', date);
-}
-
-export async function getAllDiaryDrafts(): Promise<DiaryEntry[]> {
-  const db = await openDatabase();
-  return db.getAll('diaryDrafts');
-}
-
-export async function deleteDiaryDraft(date: string): Promise<void> {
-  const db = await openDatabase();
-  await db.delete('diaryDrafts', date);
-}
+// Note: Diary operations are now in diaryStorage.ts with encryption
 
 // ===== Course Drafts =====
 
@@ -312,10 +293,10 @@ export async function clearAllData(): Promise<void> {
 
 /**
  * 导出所有草稿数据
+ * Note: Diary exports should use diaryStorage.ts
  */
 export async function exportAllDrafts() {
   return {
-    diary: await getAllDiaryDrafts(),
     courses: await getAllCourseDrafts(),
     weekly: await getAllWeeklyDrafts(),
     monthly: await getAllMonthlyDrafts(),
@@ -328,8 +309,9 @@ export async function exportAllDrafts() {
  * 获取存储统计
  */
 export async function getStorageStats() {
+  const db = await openDatabase();
   const [diaryCount, courseCount, weeklyCount, monthlyCount, yearlyCount] = await Promise.all([
-    (await getAllDiaryDrafts()).length,
+    db.count('diaryDrafts'),
     (await getAllCourseDrafts()).length,
     (await getAllWeeklyDrafts()).length,
     (await getAllMonthlyDrafts()).length,

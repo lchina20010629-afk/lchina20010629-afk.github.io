@@ -1,23 +1,17 @@
-import { useState, useEffect } from 'react';
-import { Lock, AlertTriangle, Check, Info } from 'lucide-react';
-import { isVaultInitialized, markVaultInitialized } from '../lib/storage';
-import { evaluatePasswordStrength, createPasswordVerifier } from '../lib/crypto';
+import { useState } from 'react';
+import { Lock, AlertTriangle, Check, Info, LogOut, LogIn } from 'lucide-react';
+import { useVault } from '../contexts/VaultContext';
+import { evaluatePasswordStrength } from '../lib/crypto';
 import { EmptyState } from '../components/EmptyState';
 
 export function Settings() {
-  const [vaultInit, setVaultInit] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { isInitialized, isUnlocked, initialize, lock, unlock } = useVault();
   const [showInitForm, setShowInitForm] = useState(false);
+  const [showUnlockForm, setShowUnlockForm] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [unlockPassword, setUnlockPassword] = useState('');
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    isVaultInitialized().then(initialized => {
-      setVaultInit(initialized);
-      setLoading(false);
-    });
-  }, []);
 
   const handleInitialize = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,10 +29,7 @@ export function Settings() {
     }
 
     try {
-      // 创建密码验证器
-      await createPasswordVerifier(password);
-      await markVaultInitialized();
-      setVaultInit(true);
+      await initialize(password);
       setShowInitForm(false);
       setPassword('');
       setConfirmPassword('');
@@ -47,13 +38,26 @@ export function Settings() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center" style={{ minHeight: '400px' }}>
-        <div className="spinner"></div>
-      </div>
-    );
-  }
+  const handleUnlock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      const success = await unlock(unlockPassword);
+      if (success) {
+        setShowUnlockForm(false);
+        setUnlockPassword('');
+      } else {
+        setError('密码错误');
+      }
+    } catch (err) {
+      setError('解锁失败：' + (err as Error).message);
+    }
+  };
+
+  const handleLock = () => {
+    lock();
+  };
 
   const passwordStrength = password ? evaluatePasswordStrength(password) : null;
 
@@ -66,16 +70,65 @@ export function Settings() {
 
       <div className="settings-section">
         <h2>🔒 保险库状态</h2>
-        {vaultInit ? (
-          <div className="card" style={{ backgroundColor: 'rgba(127, 176, 105, 0.1)', borderColor: 'var(--color-success)' }}>
-            <div className="flex items-center gap-md">
-              <Check size={24} color="var(--color-success)" />
-              <div>
-                <h3 className="mb-sm">保险库已初始化</h3>
-                <p className="text-muted mb-0">您的数据将被加密保存在当前浏览器中</p>
+        {isInitialized ? (
+          <>
+            <div className="card" style={{ backgroundColor: isUnlocked ? 'rgba(127, 176, 105, 0.1)' : 'rgba(232, 168, 56, 0.1)', borderColor: isUnlocked ? 'var(--color-success)' : 'var(--color-warning)' }}>
+              <div className="flex items-center gap-md" style={{ marginBottom: 'var(--spacing-md)' }}>
+                {isUnlocked ? <Check size={24} color="var(--color-success)" /> : <Lock size={24} color="var(--color-warning)" />}
+                <div style={{ flex: 1 }}>
+                  <h3 className="mb-sm">{isUnlocked ? '保险库已解锁' : '保险库已锁定'}</h3>
+                  <p className="text-muted mb-0">
+                    {isUnlocked ? '您可以查看和编辑加密数据' : '请输入密码解锁以访问数据'}
+                  </p>
+                </div>
+                {isUnlocked ? (
+                  <button onClick={handleLock} className="btn btn-secondary">
+                    <LogOut size={20} />
+                    锁定
+                  </button>
+                ) : (
+                  <button onClick={() => setShowUnlockForm(!showUnlockForm)} className="btn btn-primary">
+                    <LogIn size={20} />
+                    解锁
+                  </button>
+                )}
               </div>
+              
+              {showUnlockForm && !isUnlocked && (
+                <form onSubmit={handleUnlock} style={{ marginTop: 'var(--spacing-md)', paddingTop: 'var(--spacing-md)', borderTop: '1px solid var(--color-border)' }}>
+                  <div className="form-group">
+                    <label htmlFor="unlock-password">密码</label>
+                    <input
+                      id="unlock-password"
+                      type="password"
+                      value={unlockPassword}
+                      onChange={(e) => setUnlockPassword(e.target.value)}
+                      placeholder="输入保险库密码"
+                      required
+                      style={{ width: '100%' }}
+                      autoFocus
+                    />
+                  </div>
+                  
+                  {error && (
+                    <div className="alert alert-error">
+                      <AlertTriangle size={20} />
+                      <span>{error}</span>
+                    </div>
+                  )}
+                  
+                  <div className="form-actions">
+                    <button type="button" onClick={() => { setShowUnlockForm(false); setError(''); }} className="btn btn-secondary">
+                      取消
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      解锁
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
-          </div>
+          </>
         ) : (
           <>
             {!showInitForm ? (
