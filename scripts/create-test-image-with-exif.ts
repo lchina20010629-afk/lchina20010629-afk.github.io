@@ -4,7 +4,6 @@
  */
 
 import sharp from 'sharp';
-import { writeFileSync } from 'fs';
 
 // Create a simple 100x100 red square
 const width = 100;

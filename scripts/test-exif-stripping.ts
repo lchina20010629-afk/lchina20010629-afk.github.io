@@ -4,7 +4,6 @@
  */
 
 import sharp from 'sharp';
-import { readFileSync } from 'fs';
 
 async function testExifStripping() {
   console.log('🧪 Testing EXIF/GPS metadata stripping...\n');

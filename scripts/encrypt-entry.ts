@@ -306,7 +306,7 @@ async function main() {
         const cleanImageBuffer = await stripImageMetadata(imagePath);
         
         // Encrypt
-        const encryptedImage = encryptBuffer(cleanImageBuffer, key);
+        const encryptedImage = await encrypt(cleanImageBuffer, password);
         
         // Generate image ID and path
         const imageId = `img_${Date.now()}_${randomBytes(4).toString('hex')}`;
