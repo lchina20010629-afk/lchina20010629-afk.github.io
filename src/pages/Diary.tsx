@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Plus, Lock } from 'lucide-react';
+import { BookOpen, Plus, Lock, Cloud } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
 import { useVault } from '../contexts/VaultContext';
 import { getAllDiaryEntries } from '../lib/diaryStorage';
+import { fetchManifest } from '../lib/manifestLoader';
+
+interface DiaryEntry {
+  date: string;
+  id: string;
+  isPublished?: boolean;
+}
 
 export function Diary() {
   const { isUnlocked } = useVault();
   const location = useLocation();
-  const [entries, setEntries] = useState<Array<{ date: string; id: string }>>([]);
+  const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,8 +28,37 @@ export function Diary() {
 
   const loadEntries = async () => {
     try {
-      const allEntries = await getAllDiaryEntries();
-      setEntries(allEntries.sort((a, b) => b.date.localeCompare(a.date)));
+      // Load local drafts
+      const localEntries = await getAllDiaryEntries();
+      const localSet = new Set(localEntries.map(e => e.date));
+      
+      // Load published entries
+      const publishedEntries: DiaryEntry[] = [];
+      try {
+        const manifest = await fetchManifest('/data');
+        const diaryMeta = manifest.entries.filter(e => e.type === 'diary');
+        for (const meta of diaryMeta) {
+          // Only add published entries that don't have local drafts
+          if (!localSet.has(meta.date)) {
+            publishedEntries.push({
+              date: meta.date,
+              id: meta.id,
+              isPublished: true,
+            });
+          }
+        }
+      } catch (err) {
+        // No published content or error loading
+        console.log('No published diary entries or error loading:', err);
+      }
+      
+      // Merge and sort
+      const allEntries = [
+        ...localEntries.map(e => ({ ...e, isPublished: false })),
+        ...publishedEntries,
+      ].sort((a, b) => b.date.localeCompare(a.date));
+      
+      setEntries(allEntries);
     } catch (err) {
       console.error('Failed to load entries:', err);
     } finally {
@@ -82,7 +118,14 @@ export function Diary() {
         <div className="diary-list">
           {entries.map((entry) => (
             <Link key={entry.id} to={`/diary/${entry.date}`} className="diary-card card">
-              <div className="diary-date">{entry.date}</div>
+              <div className="diary-date-row">
+                <span className="diary-date">{entry.date}</span>
+                {entry.isPublished && (
+                  <span className="published-badge" title="已发布的公开日记">
+                    <Cloud size={14} />
+                  </span>
+                )}
+              </div>
               <div className="text-muted text-small">点击查看详情</div>
             </Link>
           ))}
@@ -105,6 +148,19 @@ export function Diary() {
         .diary-card:hover {
           transform: translateY(-2px);
           box-shadow: var(--shadow-md);
+        }
+
+        .diary-date-row {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+        }
+
+        .published-badge {
+          display: inline-flex;
+          align-items: center;
+          color: var(--color-primary);
+          opacity: 0.7;
         }
 
         .diary-date {

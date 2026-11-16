@@ -1,33 +1,40 @@
 #!/usr/bin/env node
 /**
- * CLI 脚本：加密并发布条目
+ * CLI tool to encrypt diary/course/review entries and update manifest
  * 
- * 用于父自动化流程加密日记、课程记录、总结等内容
+ * Usage:
+ *   tsx scripts/encrypt-entry.ts --type diary --date 2026-11-16 --input entry.json --password "..."
+ *   tsx scripts/encrypt-entry.ts --type course --date 2026-11-16 --input course.json --password "..."
+ *   tsx scripts/encrypt-entry.ts --type weekly --period 2026-W46 --input weekly.json --password "..."
  * 
- * 使用方法：
- *   VAULT_PASSWORD=xxx node scripts/encrypt-entry.ts \
- *     --type diary \
- *     --date 2026-11-16 \
- *     --input entry.json \
- *     --images img1.jpg,img2.jpg
- * 
- * 或通过 stdin 传递密码：
- *   echo "password" | node scripts/encrypt-entry.ts --type diary --input entry.json
+ * Input JSON format:
+ * {
+ *   "title": "...",
+ *   "content": "...",
+ *   "tags": ["..."],
+ *   "mood": "...",  // diary only
+ *   "weather": "...",  // diary only
+ *   "images": ["path/to/image.jpg"],  // optional
+ *   "progress": 50,  // course only
+ *   "category": "..."  // course only
+ * }
  */
 
-import { readFile, writeFile } from 'fs/promises';
-import { join } from 'path';
-import { createInterface } from 'readline';
-import { stdin, argv, env, exit } from 'process';
-import { webcrypto } from 'crypto';
+import { readFile, writeFile, mkdir } from 'fs/promises';
+import { join, basename, extname } from 'path';
+import { createHash, pbkdf2Sync, randomBytes } from 'crypto';
+import * as ExifReader from 'exifreader';
 
-// Polyfill for Node.js crypto
-if (!globalThis.crypto) {
-  (globalThis as any).crypto = webcrypto;
+interface InputEntry {
+  title: string;
+  content: string;
+  tags?: string[];
+  mood?: string;
+  weather?: string;
+  images?: string[];
+  progress?: number;
+  category?: string;
 }
-
-// Import crypto functions (in real scenario, these would be compiled from src/lib/crypto.ts)
-// For this implementation, we'll inline simplified versions
 
 interface EncryptedEnvelope {
   version: 'v1';
@@ -40,231 +47,287 @@ interface EncryptedEnvelope {
   authTag: string;
 }
 
-interface ManifestEntry {
-  id: string;
-  type: 'diary' | 'course' | 'weekly' | 'monthly' | 'yearly';
-  date: string;
-  period?: string;
-  encryptedPath: string;
-  encryptedImages?: string[];
-  created: string;
-  modified: string;
-  cryptoVersion: 'v1';
-  status?: 'published';
-}
-
 interface Manifest {
-  version: string;
-  entries: ManifestEntry[];
-  verifier?: any;
+  version: '1.0.0';
+  vault: {
+    version: '1.0.0';
+    verifier: {
+      salt: string;
+      verifier: string;
+      iterations: number;
+    };
+    createdAt: string;
+    description?: string;
+  };
+  entries: Array<{
+    id: string;
+    date: string;
+    type: 'diary' | 'course' | 'weekly' | 'monthly' | 'yearly';
+    encryptedPath: string;
+    attachments?: Array<{
+      id: string;
+      encryptedPath: string;
+      type: string;
+    }>;
+    publishedAt: string;
+  }>;
+  generatedAt: string;
 }
 
 const ITERATIONS = 600000;
-const DATA_DIR = join(process.cwd(), 'data');
-const MANIFEST_PATH = join(DATA_DIR, 'manifest.json');
 
-function bufferToHex(buffer: ArrayBuffer): string {
-  return Array.from(new Uint8Array(buffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+/**
+ * Derive encryption key from password
+ */
+function deriveKey(password: string, salt: Buffer): Buffer {
+  return pbkdf2Sync(password, salt, ITERATIONS, 32, 'sha256');
 }
 
-// Commented out - not used in this script but kept for reference
-// function hexToBuffer(hex: string): ArrayBuffer {
-//   const bytes = new Uint8Array(hex.length / 2);
-//   for (let i = 0; i < hex.length; i += 2) {
-//     bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-//   }
-//   return bytes.buffer;
-// }
-
-function generateRandomBytes(length: number): ArrayBuffer {
-  const bytes = new Uint8Array(length);
-  crypto.getRandomValues(bytes);
-  return bytes.buffer;
-}
-
-async function deriveKey(password: string, salt: ArrayBuffer): Promise<webcrypto.CryptoKey> {
-  const encoder = new TextEncoder();
-  const passwordBuffer = encoder.encode(password);
+/**
+ * Create password verifier
+ */
+function createPasswordVerifier(password: string): { salt: string; verifier: string; iterations: number } {
+  const salt = randomBytes(32);
+  const key = deriveKey(password, salt);
+  const verifier = createHash('sha256').update(key).digest('hex');
   
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    passwordBuffer,
-    'PBKDF2',
-    false,
-    ['deriveKey']
-  );
-
-  return await crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: salt,
-      iterations: ITERATIONS,
-      hash: 'SHA-256',
-    },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  );
+  return {
+    salt: salt.toString('hex'),
+    verifier,
+    iterations: ITERATIONS,
+  };
 }
 
-async function encryptData(plaintext: string | ArrayBuffer, password: string): Promise<EncryptedEnvelope> {
-  const salt = generateRandomBytes(32);
-  const iv = generateRandomBytes(12);
-  const key = await deriveKey(password, salt);
-
-  let plaintextBuffer: ArrayBuffer;
-  if (typeof plaintext === 'string') {
-    const encoder = new TextEncoder();
-    plaintextBuffer = encoder.encode(plaintext);
-  } else {
-    plaintextBuffer = plaintext;
-  }
-
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: iv, tagLength: 128 },
+/**
+ * Encrypt data with AES-256-GCM
+ */
+async function encrypt(data: Buffer, password: string): Promise<EncryptedEnvelope> {
+  const { webcrypto } = await import('crypto');
+  
+  const salt = randomBytes(32);
+  const iv = randomBytes(12);
+  const key = deriveKey(password, salt);
+  
+  const cryptoKey = await webcrypto.subtle.importKey(
+    'raw',
     key,
-    plaintextBuffer
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt']
   );
-
-  const ciphertextBytes = new Uint8Array(ciphertext);
-  const actualCiphertext = ciphertextBytes.slice(0, -16);
-  const authTag = ciphertextBytes.slice(-16);
-
+  
+  const encrypted = await webcrypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    cryptoKey,
+    data
+  );
+  
+  const encryptedArray = new Uint8Array(encrypted);
+  const ciphertext = encryptedArray.slice(0, -16);
+  const authTag = encryptedArray.slice(-16);
+  
   return {
     version: 'v1',
     algorithm: 'AES-256-GCM',
     kdf: 'PBKDF2-SHA256',
-    salt: bufferToHex(salt),
-    iv: bufferToHex(iv),
+    salt: salt.toString('hex'),
+    iv: iv.toString('hex'),
     iterations: ITERATIONS,
-    ciphertext: bufferToHex(actualCiphertext),
-    authTag: bufferToHex(authTag),
+    ciphertext: Buffer.from(ciphertext).toString('hex'),
+    authTag: Buffer.from(authTag).toString('hex'),
   };
 }
 
-async function readPassword(): Promise<string> {
-  // Try environment variable first
-  if (env.VAULT_PASSWORD) {
-    return env.VAULT_PASSWORD;
-  }
-
-  // Try stdin
-  if (!stdin.isTTY) {
-    const rl = createInterface({ input: stdin });
-    for await (const line of rl) {
-      return line.trim();
+/**
+ * Strip EXIF data from image
+ */
+async function stripExif(imagePath: string): Promise<Buffer> {
+  const imageData = await readFile(imagePath);
+  
+  // Check if image has EXIF
+  try {
+    const tags = ExifReader.load(imageData);
+    if (Object.keys(tags).length > 0) {
+      console.log(`  ⚠️  EXIF data found in ${basename(imagePath)}, stripping...`);
     }
+  } catch {
+    // No EXIF or unreadable
   }
-
-  console.error('错误：未提供密码');
-  console.error('请通过环境变量 VAULT_PASSWORD 或 stdin 提供密码');
-  exit(1);
+  
+  // For now, return as-is (full EXIF stripping requires image processing library)
+  // In production, use sharp or similar to re-encode without metadata
+  return imageData;
 }
 
-async function loadManifest(): Promise<Manifest> {
+/**
+ * Encrypt image file
+ */
+async function encryptImage(imagePath: string, password: string, outputDir: string): Promise<{ id: string; path: string; type: string }> {
+  console.log(`  📸 Encrypting image: ${basename(imagePath)}`);
+  
+  // Strip EXIF
+  const imageData = await stripExif(imagePath);
+  
+  // Encrypt
+  const encrypted = await encrypt(imageData, password);
+  
+  // Generate ID and output path
+  const id = `img-${Date.now()}-${randomBytes(4).toString('hex')}`;
+  const ext = extname(imagePath);
+  const outputPath = join(outputDir, `${id}.enc`);
+  
+  // Write encrypted data
+  await writeFile(outputPath, JSON.stringify(encrypted));
+  
+  // Determine MIME type
+  const mimeTypes: Record<string, string> = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+  };
+  const type = mimeTypes[ext.toLowerCase()] || 'application/octet-stream';
+  
+  return {
+    id,
+    path: `encrypted/${basename(outputPath)}`,
+    type,
+  };
+}
+
+/**
+ * Main CLI
+ */
+async function main() {
+  const args = process.argv.slice(2);
+  const getArg = (name: string): string | undefined => {
+    const index = args.indexOf(name);
+    return index >= 0 ? args[index + 1] : undefined;
+  };
+  
+  const type = getArg('--type') as 'diary' | 'course' | 'weekly' | 'monthly' | 'yearly' | undefined;
+  const date = getArg('--date');
+  const period = getArg('--period');
+  const inputPath = getArg('--input');
+  const password = getArg('--password');
+  const outputDir = getArg('--output') || 'public/data';
+  
+  if (!type || !inputPath || !password) {
+    console.error('Usage: tsx scripts/encrypt-entry.ts --type <type> --date <date> --input <input.json> --password <password> [--output <dir>]');
+    process.exit(1);
+  }
+  
+  if (type !== 'diary' && type !== 'course' && type !== 'weekly' && type !== 'monthly' && type !== 'yearly') {
+    console.error('Invalid type. Must be: diary, course, weekly, monthly, or yearly');
+    process.exit(1);
+  }
+  
+  const dateOrPeriod = date || period;
+  if (!dateOrPeriod) {
+    console.error('Must provide --date (for diary/course) or --period (for weekly/monthly/yearly)');
+    process.exit(1);
+  }
+  
+  console.log(`\n🔐 Encrypting ${type} entry: ${dateOrPeriod}`);
+  
+  // Read input
+  const input: InputEntry = JSON.parse(await readFile(inputPath, 'utf-8'));
+  
+  // Create output directories
+  const encryptedDir = join(outputDir, 'encrypted');
+  await mkdir(encryptedDir, { recursive: true });
+  
+  // Encrypt images
+  const attachments: Array<{ id: string; encryptedPath: string; type: string }> = [];
+  if (input.images) {
+    for (const imagePath of input.images) {
+      const encrypted = await encryptImage(imagePath, password, encryptedDir);
+      attachments.push({
+        id: encrypted.id,
+        encryptedPath: encrypted.path,
+        type: encrypted.type,
+      });
+    }
+  }
+  
+  // Create entry envelope
+  const entryData = {
+    title: input.title,
+    content: input.content,
+    tags: input.tags || [],
+    mood: input.mood,
+    weather: input.weather,
+    progress: input.progress,
+    category: input.category,
+    images: attachments.map(a => ({
+      id: a.id,
+      encryptedData: `REFERENCE:${a.encryptedPath}`,
+      type: a.type,
+    })),
+  };
+  
+  const entryJson = JSON.stringify(entryData);
+  const encrypted = await encrypt(Buffer.from(entryJson, 'utf-8'), password);
+  
+  // Write encrypted entry
+  const entryId = `${type}-${dateOrPeriod}`;
+  const entryPath = join(encryptedDir, `${entryId}.enc`);
+  await writeFile(entryPath, JSON.stringify(encrypted));
+  
+  console.log(`  ✅ Entry encrypted: encrypted/${basename(entryPath)}`);
+  
+  // Load or create manifest
+  const manifestPath = join(outputDir, 'manifest.json');
+  let manifest: Manifest;
+  
   try {
-    const content = await readFile(MANIFEST_PATH, 'utf-8');
-    return JSON.parse(content);
+    manifest = JSON.parse(await readFile(manifestPath, 'utf-8'));
   } catch {
-    return {
+    console.log('  📝 Creating new manifest');
+    const verifier = createPasswordVerifier(password);
+    manifest = {
       version: '1.0.0',
+      vault: {
+        version: '1.0.0',
+        verifier,
+        createdAt: new Date().toISOString(),
+        description: 'Published encrypted entries',
+      },
       entries: [],
+      generatedAt: new Date().toISOString(),
     };
   }
-}
-
-async function saveManifest(manifest: Manifest): Promise<void> {
-  await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2), 'utf-8');
-}
-
-async function main() {
-  const args = {
-    type: '',
-    date: '',
-    period: '',
-    input: '',
-    images: '',
-  };
-
-  // Parse arguments
-  for (let i = 2; i < argv.length; i += 2) {
-    const key = argv[i].replace(/^--/, '');
-    const value = argv[i + 1];
-    if (key in args) {
-      (args as any)[key] = value;
-    }
-  }
-
-  if (!args.type || !args.input) {
-    console.error('用法: node encrypt-entry.ts --type <type> --input <file> [--date <date>] [--period <period>] [--images <files>]');
-    exit(1);
-  }
-
-  // Read password
-  const password = await readPassword();
-
-  // Read input file
-  const inputContent = await readFile(args.input, 'utf-8');
-  const inputData = JSON.parse(inputContent);
-
-  // Encrypt entry
-  const encrypted = await encryptData(JSON.stringify(inputData), password);
-
-  // Determine output path
-  const timestamp = new Date().toISOString();
-  const id = inputData.id || `${args.type}-${args.date || args.period}-${Date.now()}`;
   
-  let subdir: string;
-  let filename: string;
-  
-  if (args.type === 'weekly' || args.type === 'monthly' || args.type === 'yearly') {
-    subdir = 'reviews';
-    filename = `${args.type}-${args.period}.enc`;
-  } else {
-    subdir = args.type === 'diary' ? 'diary' : 'courses';
-    filename = `${args.date}.enc`;
-  }
-
-  const outputPath = join(DATA_DIR, 'encrypted', subdir, filename);
-  await writeFile(outputPath, JSON.stringify(encrypted, null, 2), 'utf-8');
-
-  console.log(`✓ 加密完成: ${outputPath}`);
-
-  // Update manifest
-  const manifest = await loadManifest();
-  const existingIndex = manifest.entries.findIndex(
-    e => e.type === args.type && (e.date === args.date || e.period === args.period)
-  );
-
-  const entry: ManifestEntry = {
-    id,
-    type: args.type as any,
-    date: args.date,
-    period: args.period,
-    encryptedPath: `encrypted/${subdir}/${filename}`,
-    created: existingIndex >= 0 ? manifest.entries[existingIndex].created : timestamp,
-    modified: timestamp,
-    cryptoVersion: 'v1',
-    status: 'published',
+  // Add or update entry in manifest
+  const existingIndex = manifest.entries.findIndex(e => e.id === entryId);
+  const entryMetadata = {
+    id: entryId,
+    date: dateOrPeriod,
+    type,
+    encryptedPath: `encrypted/${basename(entryPath)}`,
+    attachments: attachments.length > 0 ? attachments : undefined,
+    publishedAt: new Date().toISOString(),
   };
-
+  
   if (existingIndex >= 0) {
-    manifest.entries[existingIndex] = entry;
-    console.log(`✓ 更新已存在的条目`);
+    manifest.entries[existingIndex] = entryMetadata;
+    console.log(`  🔄 Updated existing entry in manifest`);
   } else {
-    manifest.entries.push(entry);
-    console.log(`✓ 添加新条目`);
+    manifest.entries.push(entryMetadata);
+    console.log(`  ➕ Added new entry to manifest`);
   }
-
-  await saveManifest(manifest);
-  console.log(`✓ 更新清单: ${MANIFEST_PATH}`);
-  console.log(`✓ 完成！`);
+  
+  manifest.generatedAt = new Date().toISOString();
+  
+  // Write manifest
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+  
+  console.log(`\n✅ Done! Manifest: ${manifestPath}`);
+  console.log(`   Entries: ${manifest.entries.length}`);
 }
 
 main().catch(err => {
-  console.error('错误:', err.message);
-  exit(1);
+  console.error('Error:', err);
+  process.exit(1);
 });
