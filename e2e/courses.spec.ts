@@ -185,7 +185,7 @@ test.describe('Course/Learning Features', () => {
     await expect(page.locator('text=请先解锁保险库')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should capture screenshots of course detail with feedback', async ({ page, browser }) => {
+  test('should capture screenshots of course detail with feedback', async ({ page }) => {
     // Navigate to published course with feedback
     await page.goto('/#/learning/2024-03-16');
     await page.waitForTimeout(1000);
@@ -194,14 +194,37 @@ test.describe('Course/Learning Features', () => {
     await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('text=TED Talk')).toBeVisible();
     
+    // Verify all 4 columns are present
+    await expect(page.locator('text=泰语')).toBeVisible();
+    await expect(page.locator('text=修身养性')).toBeVisible();
+    await expect(page.locator('text=生财有道')).toBeVisible();
+    
     // Desktop screenshot
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.waitForTimeout(500);
     await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-desktop.png', fullPage: true });
     
-    // Mobile screenshot
-    await page.setViewportSize({ width: 375, height: 667 });
+    // Mobile screenshots - normal viewport, then scroll
+    await page.setViewportSize({ width: 375, height: 812 });
     await page.waitForTimeout(500);
-    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-mobile.png', fullPage: true });
+    
+    // Check main content dimensions
+    const mainContent = page.locator('.main-content');
+    const box = await mainContent.boundingBox();
+    console.log(`Main content height: ${box?.height}px`);
+    
+    // Screenshot top of page
+    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-mobile-top.png', clip: { x: 0, y: 0, width: 375, height: 812 } });
+    
+    // Scroll to bottom to capture all cards
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(300);
+    
+    // Verify bottom cards visible after scroll
+    const shengcaiCard = page.locator('.course-column').filter({ hasText: '生财有道' });
+    await expect(shengcaiCard).toBeVisible();
+    
+    // Screenshot bottom
+    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-mobile-bottom.png', clip: { x: 0, y: 0, width: 375, height: 812 } });
   });
 });

@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useVault } from '../contexts/VaultContext';
 import { loadReviewRecord, saveReviewRecord, type ReviewRecord } from '../lib/reviewStorage';
 import { fetchManifest, loadPublishedEntry } from '../lib/manifestLoader';
+import { isValidISOWeek, isValidISOMonth, isValidISOYear } from '../lib/dateUtils';
 
 export function ReviewDetail() {
   const { type, period } = useParams<{ type: string; period: string }>();
@@ -23,6 +24,23 @@ export function ReviewDetail() {
   const loadRecord = async () => {
     if (!password || !type || !period) return;
     const reviewType = type as 'weekly' | 'monthly' | 'yearly';
+
+    // Validate period format
+    let isValidPeriod = false;
+    if (reviewType === 'weekly') {
+      isValidPeriod = isValidISOWeek(period);
+    } else if (reviewType === 'monthly') {
+      isValidPeriod = isValidISOMonth(period);
+    } else if (reviewType === 'yearly') {
+      isValidPeriod = isValidISOYear(period);
+    }
+    
+    if (!isValidPeriod) {
+      setRecord(null);
+      setLoading(false);
+      console.error(`Invalid ${reviewType} period format: ${period}`);
+      return;
+    }
 
     try {
       const local = await loadReviewRecord(period, reviewType, password);

@@ -229,10 +229,15 @@ export function Layout({ children }: LayoutProps) {
           margin-left: 260px;
           padding: var(--spacing-2xl);
           max-width: 1400px;
+          width: 100%;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
+          .layout {
+            min-height: auto;
+          }
+          
           .sidebar {
             display: none;
           }
@@ -246,6 +251,9 @@ export function Layout({ children }: LayoutProps) {
             margin-left: 0;
             margin-bottom: 70px;
             padding: var(--spacing-lg);
+            min-height: calc(100vh - 70px);
+            display: flex;
+            flex-direction: column;
           }
         }
       `}</style>

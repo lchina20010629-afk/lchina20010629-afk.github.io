@@ -149,6 +149,25 @@ test.describe('Review Features', () => {
     await expect(quickButtons.nth(2)).toHaveAttribute('href', /#\/reviews\/yearly\/\d{4}$/); // yearly: YYYY
   });
 
+  test('should reject invalid ISO week formats', async ({ page }) => {
+    // Try to navigate to invalid ISO weeks
+    await page.goto('/#/reviews/weekly/2099-W99'); // Week 99 invalid (max 53)
+    await page.waitForTimeout(1000);
+    
+    // Should show "记录不存在" for invalid period
+    await expect(page.locator('text=记录不存在')).toBeVisible({ timeout: 5000 });
+    
+    // Try week 00
+    await page.goto('/#/reviews/weekly/2024-W00');
+    await page.waitForTimeout(1000);
+    await expect(page.locator('text=记录不存在')).toBeVisible({ timeout: 5000 });
+    
+    // Try week 54
+    await page.goto('/#/reviews/weekly/2024-W54');
+    await page.waitForTimeout(1000);
+    await expect(page.locator('text=记录不存在')).toBeVisible({ timeout: 5000 });
+  });
+
   test('should capture screenshots of review detail', async ({ page }) => {
     // Navigate to weekly review
     await page.goto('/#/reviews/weekly/2024-W11');
