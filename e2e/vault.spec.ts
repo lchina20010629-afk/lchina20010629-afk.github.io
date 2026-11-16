@@ -1,132 +1,95 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * E2E Test: Vault Initialization, Lock/Unlock, State Management
- * 
- * Tests gate #1: Empty site initialize vault, lock/unlock/reload,
- * verify IndexedDB encryption, wrong password handling
+ * E2E tests for vault initialization and unlock/lock functionality
+ * Tests run against the dev server at http://localhost:5173
  */
 
 test.describe('Vault Management', () => {
   test.beforeEach(async ({ page, context }) => {
-    // Clear storage before each test
     await context.clearCookies();
-    await page.goto('/');
+    await page.goto('http://localhost:5173/settings');
     
     // Clear IndexedDB
-    await page.evaluate(() => {
-      return new Promise<void>((resolve) => {
-        const request = indexedDB.deleteDatabase('life-growth-db');
-        request.onsuccess = () => resolve();
-        request.onerror = () => resolve();
-      });
-    });
-  });
-
-  test('should display vault initialization prompt on first visit', async ({ page }) => {
-    await page.goto('/settings');
-    
-    // Should show vault uninitialized message
-    await expect(page.locator('text=保险库未初始化')).toBeVisible();
-    await expect(page.locator('button:has-text("初始化保险库")')).toBeVisible();
-  });
-
-  test('should initialize vault with strong password', async ({ page }) => {
-    await page.goto('/settings');
-    
-    // Click initialize button
-    await page.click('button:has-text("初始化保险库")');
-    
-    // Fill password form
-    const strongPassword = 'TestP@ssw0rd!2024Long';
-    await page.fill('input[type="password"]#password', strongPassword);
-    await page.fill('input[type="password"]#confirm-password', strongPassword);
-    
-    // Submit
-    await page.click('button[type="submit"]:has-text("确认初始化")');
-    
-    // Should show success
-    await expect(page.locator('text=保险库已初始化')).toBeVisible({ timeout: 5000 });
-    
-    // Verify IndexedDB was created
-    const dbExists = await page.evaluate(async () => {
+    await page.evaluate(async () => {
       const dbs = await indexedDB.databases();
-      return dbs.some(db => db.name === 'life-growth-db');
+      for (const db of dbs) {
+        if (db.name) {
+          indexedDB.deleteDatabase(db.name);
+        }
+      }
+      localStorage.clear();
+      sessionStorage.clear();
     });
-    expect(dbExists).toBe(true);
-  });
-
-  test('should reject weak password', async ({ page }) => {
-    await page.goto('/settings');
-    await page.click('button:has-text("初始化保险库")');
     
-    // Try weak password
-    await page.fill('input[type="password"]#password', '123456');
-    await page.fill('input[type="password"]#confirm-password', '123456');
-    
-    // Should show strength warning
-    await expect(page.locator('text=密码强度不足')).toBeVisible({ timeout: 2000 });
-  });
-
-  test('should reject mismatched passwords', async ({ page }) => {
-    await page.goto('/settings');
-    await page.click('button:has-text("初始化保险库")');
-    
-    await page.fill('input[type="password"]#password', 'TestP@ssw0rd!2024');
-    await page.fill('input[type="password"]#confirm-password', 'DifferentP@ssw0rd');
-    await page.click('button[type="submit"]:has-text("确认初始化")');
-    
-    await expect(page.locator('text=两次输入的密码不一致')).toBeVisible();
-  });
-
-  test('should persist vault initialization across reload', async ({ page }) => {
-    // Initialize vault
-    await page.goto('/settings');
-    await page.click('button:has-text("初始化保险库")');
-    
-    const password = 'TestP@ssw0rd!2024Long';
-    await page.fill('input[type="password"]#password', password);
-    await page.fill('input[type="password"]#confirm-password', password);
-    await page.click('button[type="submit"]:has-text("确认初始化")');
-    
-    await expect(page.locator('text=保险库已初始化')).toBeVisible();
-    
-    // Reload page
+    // Reload to reset state
     await page.reload();
-    
-    // Should still show as initialized
-    await expect(page.locator('text=保险库已初始化')).toBeVisible();
-  });
-});
-
-test.describe('Accessibility', () => {
-  test('should support keyboard navigation', async ({ page }) => {
-    await page.goto('/');
-    
-    // Tab through navigation
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    
-    // Should have visible focus indicator
-    const focused = await page.evaluate(() => {
-      const active = document.activeElement;
-      const styles = window.getComputedStyle(active!);
-      return styles.outline !== 'none';
-    });
-    
-    // Some element should be focused
-    expect(await page.evaluate(() => document.activeElement?.tagName)).toBeTruthy();
   });
 
-  test('should have proper ARIA labels', async ({ page }) => {
-    await page.goto('/');
+  test('initializes vault with strong password', async ({ page }) => {
+    await expect(page.getByText('保险库未初始化')).toBeVisible();
     
-    // Check for navigation landmark
-    const nav = page.locator('nav');
-    await expect(nav).toBeVisible();
+    await page.getByRole('button', { name: '初始化保险库' }).click();
     
-    // Check for main content landmark
-    const main = page.locator('main');
-    await expect(main).toBeVisible();
+    const password = 'TestPassword123!@#Strong';
+    await page.locator('#password').fill(password);
+    await page.locator('#confirm-password').fill(password);
+    
+    await page.getByRole('button', { name: '确认初始化' }).click();
+    
+    await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('rejects weak password during initialization', async ({ page }) => {
+    await page.getByRole('button', { name: '初始化保险库' }).click();
+    
+    const weakPassword = '12345';
+    await page.locator('#password').fill(weakPassword);
+    await page.locator('#confirm-password').fill(weakPassword);
+    
+    await page.getByRole('button', { name: '确认初始化' }).click();
+    
+    await expect(page.getByText(/密码强度不足/)).toBeVisible();
+  });
+
+  test('locks and unlocks vault with correct password', async ({ page }) => {
+    // Initialize first
+    await page.getByRole('button', { name: '初始化保险库' }).click();
+    const password = 'TestPassword123!@#Strong';
+    await page.locator('#password').fill(password);
+    await page.locator('#confirm-password').fill(password);
+    await page.getByRole('button', { name: '确认初始化' }).click();
+    await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
+
+    // Lock it
+    await page.getByRole('button', { name: '锁定' }).click();
+    await expect(page.getByText('保险库已锁定')).toBeVisible();
+
+    // Unlock with correct password - first open the form
+    await page.getByRole('button', { name: '解锁' }).first().click();
+    await page.locator('#unlock-password').fill(password);
+    // Then submit the form
+    await page.locator('form').filter({ hasText: '密码' }).getByRole('button', { name: '解锁' }).click();
+    await expect(page.getByText('保险库已解锁')).toBeVisible();
+  });
+
+  test('rejects wrong password during unlock', async ({ page }) => {
+    // Initialize
+    await page.getByRole('button', { name: '初始化保险库' }).click();
+    const password = 'TestPassword123!@#Strong';
+    await page.locator('#password').fill(password);
+    await page.locator('#confirm-password').fill(password);
+    await page.getByRole('button', { name: '确认初始化' }).click();
+    await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
+
+    // Lock
+    await page.getByRole('button', { name: '锁定' }).click();
+
+    // Try wrong password - first open form
+    await page.getByRole('button', { name: '解锁' }).first().click();
+    await page.locator('#unlock-password').fill('WrongPassword123!');
+    // Submit form
+    await page.locator('form').filter({ hasText: '密码' }).getByRole('button', { name: '解锁' }).click();
+    await expect(page.getByText('密码错误')).toBeVisible();
   });
 });

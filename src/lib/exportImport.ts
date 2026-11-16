@@ -19,7 +19,7 @@ export async function exportAllData(password: string): Promise<Blob> {
   const db = await openDatabase();
   
   // Get all data
-  const [diaryDrafts, courseDrafts, weeklyDrafts, monthlyDrafts, yearlyDrafts, settings] = await Promise.all([
+  const [diaryDrafts, courseDrafts, weeklyDrafts, monthlyDrafts, yearlyDrafts, settingsEntries] = await Promise.all([
     db.getAll('diaryDrafts'),
     db.getAll('courseDrafts'),
     db.getAll('weeklyDrafts'),
@@ -28,13 +28,16 @@ export async function exportAllData(password: string): Promise<Blob> {
     db.getAll('settings'),
   ]);
   
+  // Filter out password verifier from settings
+  const settings = (settingsEntries as Array<[string, unknown]>).filter(([key]) => key !== 'password_verifier');
+  
   const allData = {
     diaryDrafts,
     courseDrafts,
     weeklyDrafts,
     monthlyDrafts,
     yearlyDrafts,
-    settings: settings.filter(([key]) => key !== 'password_verifier'), // Don't export password
+    settings,
   };
   
   // Encrypt the data

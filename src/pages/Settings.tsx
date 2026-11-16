@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Lock, AlertTriangle, Check, Info, LogOut, LogIn } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Lock, AlertTriangle, Check, Info, LogOut, LogIn, Download, Upload } from 'lucide-react';
 import { useVault } from '../contexts/VaultContext';
 import { evaluatePasswordStrength } from '../lib/crypto';
+import { exportAllData, importData, downloadExport } from '../lib/exportImport';
 import { EmptyState } from '../components/EmptyState';
 
 export function Settings() {
@@ -12,6 +13,10 @@ export function Settings() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [unlockPassword, setUnlockPassword] = useState('');
   const [error, setError] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ imported: number; skipped: number } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleInitialize = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +62,52 @@ export function Settings() {
 
   const handleLock = () => {
     lock();
+  };
+
+  const handleExport = async () => {
+    if (!password) {
+      setError('请先解锁保险库');
+      return;
+    }
+
+    setExporting(true);
+    setError('');
+
+    try {
+      const blob = await exportAllData(password);
+      downloadExport(blob);
+    } catch (err) {
+      setError('导出失败: ' + (err as Error).message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !password) {
+      return;
+    }
+
+    setImporting(true);
+    setError('');
+    setImportResult(null);
+
+    try {
+      const result = await importData(file, password);
+      setImportResult(result);
+    } catch (err) {
+      setError('导入失败: ' + (err as Error).message);
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const passwordStrength = password ? evaluatePasswordStrength(password) : null;
@@ -224,6 +275,49 @@ export function Settings() {
         )}
       </div>
 
+      {isInitialized && isUnlocked && (
+        <div className="settings-section">
+          <h2>💾 备份与恢复</h2>
+          <div className="card">
+            <p className="text-muted mb-lg">导出和导入加密备份数据</p>
+            
+            <div className="backup-actions">
+              <button onClick={handleExport} className="btn btn-primary" disabled={exporting}>
+                <Download size={20} />
+                {exporting ? '导出中...' : '导出备份'}
+              </button>
+              
+              <button onClick={handleImportClick} className="btn btn-secondary" disabled={importing}>
+                <Upload size={20} />
+                {importing ? '导入中...' : '导入备份'}
+              </button>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                style={{ display: 'none' }}
+              />
+            </div>
+
+            {importResult && (
+              <div className="alert" style={{ backgroundColor: 'rgba(127, 176, 105, 0.1)', borderColor: 'var(--color-success)', marginTop: 'var(--spacing-md)' }}>
+                <Check size={20} color="var(--color-success)" />
+                <span>导入成功: {importResult.imported} 条新记录，跳过 {importResult.skipped} 条已存在记录</span>
+              </div>
+            )}
+
+            <div className="info-box" style={{ marginTop: 'var(--spacing-lg)' }}>
+              <p className="text-small text-muted">
+                ⚠️ 导入时使用您当前的密码解密备份。如果备份使用不同的密码，导入将失败。
+                已存在的数据不会被覆盖。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="settings-section">
         <h2>ℹ️ 隐私与安全说明</h2>
         <div className="card">
@@ -346,6 +440,19 @@ export function Settings() {
 
         .info-list li:last-child {
           border-bottom: none;
+        }
+
+        .backup-actions {
+          display: flex;
+          gap: var(--spacing-md);
+          flex-wrap: wrap;
+        }
+
+        .info-box {
+          background-color: var(--color-bg-secondary);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-md);
+          padding: var(--spacing-md);
         }
       `}</style>
     </div>
