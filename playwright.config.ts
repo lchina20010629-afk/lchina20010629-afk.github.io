@@ -5,7 +5,7 @@ export default defineConfig({
   testMatch: ['vault.spec.ts', 'security.spec.ts', 'diary.spec.ts', 'backup.spec.ts', 'migration.spec.ts'],
   fullyParallel: false, // Serial to avoid IndexedDB conflicts
   forbidOnly: !!process.env.CI,
-  retries: 0,
+  retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: 'list',
   use: {

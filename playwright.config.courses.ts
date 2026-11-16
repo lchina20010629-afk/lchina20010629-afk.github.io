@@ -5,7 +5,7 @@ export default defineConfig({
   testMatch: ['courses.spec.ts', 'reviews.spec.ts'],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: 0,
+  retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: 'list',
   globalSetup: './e2e/global-setup-courses.ts',

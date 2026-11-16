@@ -79,6 +79,11 @@ jobs:
     - name: Course/Review E2E tests
       run: npx playwright test --config=playwright.config.courses.ts
       
+    - name: Restore production dist for photo tests
+      run: |
+        rm -rf dist/data
+        cp -r dist-production/data dist/data
+      
     - name: Photo E2E tests
       run: npx playwright test --config=playwright.config.photos.ts
       
