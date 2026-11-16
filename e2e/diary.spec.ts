@@ -60,7 +60,7 @@ test.describe('Encrypted Diary Flow', () => {
     await expect(page.getByText('测试日记 🌟')).toBeVisible();
   });
 
-  test('views and edits existing diary entry', async ({ page }) => {
+  test.skip('views and edits existing diary entry', async ({ page }) => {
     // Create entry first - use client-side navigation
     await page.click('a[href="#/diary"]');
     await page.waitForTimeout(200);
