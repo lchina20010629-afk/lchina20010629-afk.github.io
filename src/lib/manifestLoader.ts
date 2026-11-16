@@ -97,7 +97,8 @@ export async function loadPublishedEntry(
   if (metadata.attachments) {
     for (const att of metadata.attachments) {
       try {
-        const imageUrl = `${baseUrl}/${att.encryptedPath}`;
+        // encryptedPath already includes "data/" prefix, so use root
+        const imageUrl = `/${att.encryptedPath}`;
         const imageResponse = await fetch(imageUrl);
         if (!imageResponse.ok) continue;
         

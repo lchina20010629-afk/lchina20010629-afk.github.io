@@ -204,27 +204,34 @@ test.describe('Course/Learning Features', () => {
     await page.waitForTimeout(500);
     await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-desktop.png', fullPage: true });
     
-    // Mobile screenshots - normal viewport, then scroll
+    // Mobile screenshots - normal viewport at top and scrolled position
     await page.setViewportSize({ width: 375, height: 812 });
     await page.waitForTimeout(500);
     
-    // Check main content dimensions
-    const mainContent = page.locator('.main-content');
-    const box = await mainContent.boundingBox();
-    console.log(`Main content height: ${box?.height}px`);
-    
-    // Screenshot top of page
-    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-mobile-top.png', clip: { x: 0, y: 0, width: 375, height: 812 } });
-    
-    // Scroll to bottom to capture all cards
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    // Scroll to top first
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(300);
     
-    // Verify bottom cards visible after scroll
+    // Verify first cards visible at top (英语 should be visible, 生财有道 should be below fold)
+    await expect(page.locator('.course-column').filter({ hasText: '英语' })).toBeVisible();
+    
+    // Screenshot top viewport (showing 英语, 泰语)
+    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-mobile-top.png' });
+    
+    // Scroll down to show bottom cards
+    await page.evaluate(() => {
+      const columns = document.querySelectorAll('.course-column');
+      if (columns.length >= 4) {
+        columns[3].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+    await page.waitForTimeout(500);
+    
+    // Verify bottom cards visible after scroll (生财有道, 修身养性)
     const shengcaiCard = page.locator('.course-column').filter({ hasText: '生财有道' });
     await expect(shengcaiCard).toBeVisible();
     
-    // Screenshot bottom
-    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-mobile-bottom.png', clip: { x: 0, y: 0, width: 375, height: 812 } });
+    // Screenshot bottom viewport (showing 修身养性, 生财有道, 今日总结)
+    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-mobile-bottom.png' });
   });
 });

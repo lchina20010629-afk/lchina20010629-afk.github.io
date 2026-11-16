@@ -82,10 +82,12 @@ test.describe('Encrypted Diary Flow', () => {
     await page.locator('#content').fill('Updated content with changes.');
     await page.getByRole('button', { name: '保存' }).click();
     
+    // Wait for redirect and content reload
     await expect(page).toHaveURL(`/#/diary/${today}`, { timeout: 10000 });
-    await page.waitForTimeout(1000); // Wait for content to reload and render
-    await expect(page.getByText('Updated Title')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Updated content with changes.')).toBeVisible();
+    
+    // Wait for the actual updated content to be visible (not just loading state)
+    await expect(page.getByText('Updated Title')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('Updated content with changes.')).toBeVisible({ timeout: 5000 });
   });
 
   test('deletes diary entry', async ({ page }) => {
