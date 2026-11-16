@@ -163,10 +163,14 @@ test.describe('Backup and Import', () => {
     await page.locator('#title').fill('New Entry After Export');
     await page.locator('#content').fill('Should be preserved.');
     await page.getByRole('button', { name: '保存' }).click();
+    
+    // Wait for navigation to detail page
+    await page.waitForURL(`**/diary/${yesterday}`, { timeout: 5000 });
+    await page.waitForTimeout(500);
 
     // Import old backup using client-side navigation
     await page.click('a[href="/settings"]');
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(500);
     await page.locator('input[type="file"]').setInputFiles(downloadPath);
     await expect(page.getByText(/跳过.*1 条已存在记录/)).toBeVisible({ timeout: 5000 });
 
