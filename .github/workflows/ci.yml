@@ -90,6 +90,12 @@ jobs:
     - name: PWA upgrade tests
       run: npx playwright test --config=playwright.config.pwa.ts
       
+    - name: PWA real A→B upgrade tests
+      run: |
+        # Build VERSION A and B for switchable server testing
+        node e2e/build-pwa-versions.mjs
+        npx playwright test --config=playwright.config.pwa-real.ts
+      
     - name: Restore production dist
       run: |
         rm -rf dist
@@ -113,8 +119,9 @@ jobs:
         echo "Course/Review: 17"
         echo "Photo Tests: 3"
         echo "PWA Tests: 10"
+        echo "PWA Real A→B: 3"
         echo "━━━━━━━━━━━━━━━━━"
-        echo "Total: 143 tests"
+        echo "Total: 146 tests"
         
     - name: Upload test artifacts on failure
       if: failure()

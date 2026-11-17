@@ -39,3 +39,4 @@ coverage
 test-results/
 test-output/data/encrypted/
 playwright-report/
+test-output/

@@ -42,13 +42,13 @@ self.addEventListener('install', (event) => {
           // Continue with other files
         }
       }
-      console.log('[SW] Shell caching complete, skipping waiting');
-      return self.skipWaiting(); // Activate immediately
+      console.log('[SW] Shell caching complete, waiting for user confirmation');
+      // DON'T skip waiting automatically - wait for user to click "Update" button
+      // This prevents losing unsaved data
     })
     .catch(err => {
       console.error('[SW] Install failed:', err);
       // Don't throw - allow SW to install even if caching fails
-      return self.skipWaiting();
     })
   );
 });

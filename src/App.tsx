@@ -3,6 +3,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { VaultProvider } from './contexts/VaultContext';
 import { Layout } from './components/Layout';
 import { PWAPrompt } from './components/PWAPrompt';
+import { UpdateNotification } from './components/UpdateNotification';
 import { Dashboard } from './pages/Dashboard';
 import { Diary } from './pages/Diary';
 import { DiaryCreate } from './pages/DiaryCreate';
@@ -34,6 +35,7 @@ export function App() {
             </Routes>
           </Layout>
           <PWAPrompt />
+          <UpdateNotification />
         </HashRouter>
       </VaultProvider>
     </ThemeProvider>
