@@ -3,12 +3,21 @@
   "vault": {
     "version": "1.0.0",
     "verifier": {
-      "salt": "",
-      "verifier": "",
+      "salt": "1b8181d06caa8f6c0bacf1c1a9073427f25a13bce56dec2d3ff6533463236386",
+      "verifier": "c8ce3136971f85da0941e3c56e66d767b198c75e5b5bf7a6c198331ba49f40ec",
       "iterations": 600000
     },
-    "createdAt": "2024-01-01T00:00:00.000Z"
+    "createdAt": "2026-11-17T04:56:04.199Z",
+    "description": "Published encrypted entries"
   },
-  "entries": [],
-  "generatedAt": "2024-01-01T00:00:00.000Z"
+  "entries": [
+    {
+      "id": "course-2026-11-17",
+      "date": "2026-11-17",
+      "type": "course",
+      "encryptedPath": "encrypted/course-2026-11-17.enc",
+      "publishedAt": "2026-11-17T04:56:04.461Z"
+    }
+  ],
+  "generatedAt": "2026-11-17T04:56:04.462Z"
 }
