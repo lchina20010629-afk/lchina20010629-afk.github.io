@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle, Circle } from 'lucide-react';
 import { useVault } from '../contexts/VaultContext';
 import { loadCourseRecord, saveCourseRecord, COURSE_COLUMNS, type CourseRecord } from '../lib/courseStorage';
 import { fetchManifest, loadPublishedEntry } from '../lib/manifestLoader';
+import { UnlockPrompt } from '../components/UnlockPrompt';
 
 export function CourseDetail() {
   const { date } = useParams<{ date: string }>();
@@ -46,12 +47,15 @@ export function CourseDetail() {
           ? JSON.parse(published.content)
           : published.content;
         
+        // Handle both root format {courses: [...]} and wrapped format {content: {courses: [...]}}
+        const actualData = courseData.content || courseData;
+        
         setRecord({
           id: published.id,
           date: published.date,
-          courses: courseData.courses || [],
-          totalMinutes: courseData.totalMinutes || 0,
-          notes: courseData.notes,
+          courses: actualData.courses || [],
+          totalMinutes: actualData.totalMinutes || 0,
+          notes: actualData.notes,
           created: published.publishedAt,
           modified: published.publishedAt,
         });
@@ -123,7 +127,22 @@ export function CourseDetail() {
   };
 
   if (!isUnlocked) {
-    return <div className="card"><p>请先解锁保险库才能查看学习记录</p></div>;
+    return (
+      <div className="course-detail">
+        <header className="page-header">
+          <div className="header-row">
+            <Link to="#/learning" className="back-button">
+              <ArrowLeft size={20} />
+            </Link>
+            <h1>学习记录 - {date}</h1>
+          </div>
+        </header>
+        <UnlockPrompt 
+          message="请先解锁保险库才能查看学习详情和记录完成状态"
+          returnPath={`/learning/${date}`}
+        />
+      </div>
+    );
   }
 
   if (loading) {

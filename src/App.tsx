@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { VaultProvider } from './contexts/VaultContext';
 import { Layout } from './components/Layout';
+import { PWAPrompt } from './components/PWAPrompt';
 import { Dashboard } from './pages/Dashboard';
 import { Diary } from './pages/Diary';
 import { DiaryCreate } from './pages/DiaryCreate';
@@ -32,6 +33,7 @@ export function App() {
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </Layout>
+          <PWAPrompt />
         </HashRouter>
       </VaultProvider>
     </ThemeProvider>

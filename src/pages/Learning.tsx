@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Plus, Lock, Calendar } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { BookOpen, Plus, Calendar } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
 import { useVault } from '../contexts/VaultContext';
 import { getAllCourseRecords } from '../lib/courseStorage';
+import { UnlockPrompt } from '../components/UnlockPrompt';
 import { fetchManifest } from '../lib/manifestLoader';
 import { COURSE_COLUMNS } from '../lib/courseStorage';
 
@@ -16,6 +17,7 @@ interface CourseEntry {
 export function Learning() {
   const { isUnlocked } = useVault();
   const location = useLocation();
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<CourseEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -75,12 +77,10 @@ export function Learning() {
         <header className="page-header">
           <h1>成长学习</h1>
         </header>
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <Lock size={24} />
-            <p>请先解锁保险库才能查看学习记录</p>
-          </div>
-        </div>
+        <UnlockPrompt 
+          message="请先解锁保险库才能查看学习记录和今日课程"
+          returnPath="/learning"
+        />
       </div>
     );
   }
@@ -94,7 +94,7 @@ export function Learning() {
       <header className="page-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h1>成长学习</h1>
-          <Link to={`/learning/${getTodayDate()}`} className="btn btn-primary">
+          <Link to={`#/learning/${getTodayDate()}`} className="btn btn-primary">
             <Plus size={20} />
             今日学习
           </Link>
@@ -120,7 +120,7 @@ export function Learning() {
           description="开始记录您的每日学习进度"
           action={{
             label: '创建今日记录',
-            onClick: () => window.location.hash = `/learning/${getTodayDate()}`
+            onClick: () => navigate(`/learning/${getTodayDate()}`)
           }}
         />
       ) : (

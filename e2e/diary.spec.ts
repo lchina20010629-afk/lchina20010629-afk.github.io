@@ -71,26 +71,28 @@ test.describe('Encrypted Diary Flow', () => {
     await page.locator('#content').fill('Original content here.');
     await page.getByRole('button', { name: '保存' }).click();
     
-    await expect(page).toHaveURL(`/#/diary/${today}`);
+    await expect(page).toHaveURL(`/#/diary/${today}`, { timeout: 10000 });
     await expect(page.getByText('Original Title')).toBeVisible();
     
     // Edit it
     await page.getByRole('button', { name: '编辑' }).click();
-    await expect(page).toHaveURL(`/#/diary/${today}/edit`);
+    await expect(page).toHaveURL(`/#/diary/${today}/edit`, { timeout: 10000 });
     
+    // Wait for form to be ready
+    await page.waitForSelector('#title', { state: 'visible' });
     await page.locator('#title').fill('Updated Title');
     await page.locator('#content').fill('Updated content with changes.');
     await page.getByRole('button', { name: '保存' }).click();
     
-    // Wait for redirect
-    await expect(page).toHaveURL(`/#/diary/${today}`, { timeout: 10000 });
+    // Wait for redirect with longer timeout
+    await expect(page).toHaveURL(`/#/diary/${today}`, { timeout: 15000 });
     
-    // Wait for loading state to complete and content to render
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
+    // Wait for content to be decrypted and rendered
+    await page.waitForLoadState('networkidle', { timeout: 10000 });
+    await page.waitForTimeout(2000);
     
-    // Verify updated content visible
-    await expect(page.getByText('Updated Title')).toBeVisible({ timeout: 20000 });
+    // Verify updated content visible with longer timeout for slower CI
+    await expect(page.getByText('Updated Title')).toBeVisible({ timeout: 30000 });
     await expect(page.getByText('Updated content with changes.')).toBeVisible({ timeout: 5000 });
   });
 

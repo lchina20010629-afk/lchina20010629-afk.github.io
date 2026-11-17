@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Plus, Lock, Cloud } from 'lucide-react';
+import { BookOpen, Plus, Cloud } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
+import { UnlockPrompt } from '../components/UnlockPrompt';
 import { useVault } from '../contexts/VaultContext';
 import { getAllDiaryEntries } from '../lib/diaryStorage';
 import { fetchManifest } from '../lib/manifestLoader';
@@ -74,11 +75,7 @@ export function Diary() {
           <p className="text-muted">记录每一天的点滴瞬间</p>
         </header>
 
-        <EmptyState
-          icon={Lock}
-          title="保险库已锁定"
-          description="请先解锁保险库才能查看和创建日记"
-        />
+        <UnlockPrompt message="请先解锁保险库才能查看和创建日记" returnPath="/diary" />
       </div>
     );
   }

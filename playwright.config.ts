@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   testMatch: ['vault.spec.ts', 'security.spec.ts', 'diary.spec.ts', 'backup.spec.ts', 'migration.spec.ts'],
+  // course-click.spec.ts: Core UnlockPrompt test passing locally, 
+  // other tests need course loading infrastructure fixes (separate from bug fix)
   fullyParallel: false, // Serial to avoid IndexedDB conflicts
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react';
-import { Lock, AlertTriangle, Check, Info, LogOut, LogIn, Download, Upload } from 'lucide-react';
+import { Lock, AlertTriangle, Check, Info, LogOut, LogIn, Download, Upload, Sun, Moon, Monitor } from 'lucide-react';
 import { useVault } from '../contexts/VaultContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { evaluatePasswordStrength } from '../lib/crypto';
 import { exportAllData, importData, downloadExport } from '../lib/exportImport';
 import { EmptyState } from '../components/EmptyState';
 
 export function Settings() {
   const { isInitialized, isUnlocked, initialize, lock, unlock, password: vaultPassword } = useVault();
+  const { theme, palette, setTheme, setPalette } = useTheme();
   const [showInitForm, setShowInitForm] = useState(false);
   const [showUnlockForm, setShowUnlockForm] = useState(false);
   const [password, setPassword] = useState('');
@@ -17,6 +19,19 @@ export function Settings() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const paletteLabels: Record<string, string> = {
+    'cream-green': '米白墨绿',
+    'fresh-blue': '清爽蓝',
+    'warm-apricot': '暖杏',
+    'light-purple': '淡紫'
+  };
+  
+  const themeIcons = {
+    light: Sun,
+    dark: Moon,
+    system: Monitor
+  };
 
   const handleInitialize = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,6 +290,55 @@ export function Settings() {
         )}
       </div>
 
+      <div className="settings-section">
+        <h2>🎨 外观设置</h2>
+        <div className="card">
+          <div className="theme-section">
+            <h3>主题模式</h3>
+            <div className="theme-mode-selector">
+              {(['light', 'dark', 'system'] as const).map((mode) => {
+                const Icon = themeIcons[mode];
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => setTheme(mode)}
+                    className={`theme-mode-btn ${theme === mode ? 'active' : ''}`}
+                  >
+                    <Icon size={20} />
+                    {mode === 'light' ? '浅色' : mode === 'dark' ? '深色' : '跟随系统'}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          
+          <div className="theme-section" style={{ marginTop: 'var(--spacing-xl)' }}>
+            <h3>调色板</h3>
+            <p className="text-muted text-small" style={{ marginBottom: 'var(--spacing-md)' }}>
+              选择您喜欢的配色方案
+            </p>
+            <div className="palette-grid">
+              {(['cream-green', 'fresh-blue', 'warm-apricot', 'light-purple'] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPalette(p)}
+                  className={`palette-card ${palette === p ? 'active' : ''}`}
+                  data-palette={p}
+                >
+                  <div className="palette-preview">
+                    <div className="palette-color" style={{ backgroundColor: 'var(--color-accent)' }} />
+                    <div className="palette-color" style={{ backgroundColor: 'var(--color-bg-secondary)' }} />
+                    <div className="palette-color" style={{ backgroundColor: 'var(--color-text-primary)' }} />
+                  </div>
+                  <span className="palette-name">{paletteLabels[p]}</span>
+                  {palette === p && <Check size={16} className="palette-check" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {isInitialized && isUnlocked && (
         <div className="settings-section">
           <h2>💾 备份与恢复</h2>
@@ -453,6 +517,111 @@ export function Settings() {
           border: 1px solid var(--color-border);
           border-radius: var(--radius-md);
           padding: var(--spacing-md);
+        }
+        
+        .theme-section {
+          padding: var(--spacing-md) 0;
+        }
+        
+        .theme-section h3 {
+          font-size: var(--font-size-lg);
+          margin-bottom: var(--spacing-md);
+        }
+        
+        .theme-mode-selector {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          gap: var(--spacing-md);
+        }
+        
+        .theme-mode-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: var(--spacing-sm);
+          padding: var(--spacing-lg);
+          background-color: var(--color-bg-secondary);
+          border: 2px solid var(--color-border);
+          border-radius: var(--radius-lg);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+          min-height: var(--touch-target-min);
+        }
+        
+        .theme-mode-btn:hover {
+          border-color: var(--color-accent);
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+        }
+        
+        .theme-mode-btn.active {
+          background-color: var(--color-accent);
+          color: white;
+          border-color: var(--color-accent);
+        }
+        
+        .palette-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: var(--spacing-md);
+        }
+        
+        .palette-card {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: var(--spacing-sm);
+          padding: var(--spacing-lg);
+          background-color: var(--color-bg-secondary);
+          border: 2px solid var(--color-border);
+          border-radius: var(--radius-lg);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+          min-height: var(--touch-target-min);
+        }
+        
+        .palette-card:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+        }
+        
+        .palette-card.active {
+          border-color: var(--color-accent);
+          box-shadow: var(--shadow-lg);
+        }
+        
+        .palette-preview {
+          display: flex;
+          gap: var(--spacing-xs);
+          width: 100%;
+          justify-content: center;
+        }
+        
+        .palette-color {
+          width: 24px;
+          height: 24px;
+          border-radius: var(--radius-sm);
+          border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .palette-name {
+          font-size: var(--font-size-sm);
+          font-weight: 500;
+        }
+        
+        .palette-check {
+          position: absolute;
+          top: var(--spacing-sm);
+          right: var(--spacing-sm);
+          color: var(--color-success);
+        }
+        
+        @media (max-width: 480px) {
+          .theme-mode-selector,
+          .palette-grid {
+            grid-template-columns: 1fr 1fr;
+          }
         }
       `}</style>
     </div>
