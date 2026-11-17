@@ -3,21 +3,35 @@
   "vault": {
     "version": "1.0.0",
     "verifier": {
-      "salt": "1b8181d06caa8f6c0bacf1c1a9073427f25a13bce56dec2d3ff6533463236386",
-      "verifier": "c8ce3136971f85da0941e3c56e66d767b198c75e5b5bf7a6c198331ba49f40ec",
+      "salt": "0b0d7b23f59746a7e40f70acb22311a5c793475d3a98fb37bb51ed76a691ec43",
+      "verifier": "135533cbf7de0963b8ddcd524daf4c73c4133f6fe47df0554e792a8307dfb154",
       "iterations": 600000
     },
-    "createdAt": "2026-11-17T04:56:04.199Z",
+    "createdAt": "2026-11-17T07:02:14.505Z",
     "description": "Published encrypted entries"
   },
   "entries": [
     {
-      "id": "course-2026-11-17",
-      "date": "2026-11-17",
+      "id": "diary-2026-11-16",
+      "date": "2026-11-16",
+      "type": "diary",
+      "encryptedPath": "encrypted/diary-2026-11-16.enc",
+      "publishedAt": "2026-11-17T07:02:14.505Z"
+    },
+    {
+      "id": "course-2024-03-15",
+      "date": "2024-03-15",
       "type": "course",
-      "encryptedPath": "encrypted/course-2026-11-17.enc",
-      "publishedAt": "2026-11-17T04:56:04.461Z"
+      "encryptedPath": "encrypted/course-2024-03-15.enc",
+      "publishedAt": "2026-11-17T07:02:15.011Z"
+    },
+    {
+      "id": "course-2024-03-16",
+      "date": "2024-03-16",
+      "type": "course",
+      "encryptedPath": "encrypted/course-2024-03-16.enc",
+      "publishedAt": "2026-11-17T07:02:15.521Z"
     }
   ],
-  "generatedAt": "2026-11-17T04:56:04.462Z"
+  "generatedAt": "2026-11-17T07:02:15.521Z"
 }

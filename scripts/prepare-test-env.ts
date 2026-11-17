@@ -4,7 +4,6 @@
  */
 
 import { cpSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 
 const SOURCE_DIR = 'test-output/data';
 const DEST_DIR = 'dist/data';

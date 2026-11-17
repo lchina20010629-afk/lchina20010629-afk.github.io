@@ -1,5 +1,5 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2026-11-16T23:25:33.198Z",
-  "encrypted": "{\"version\":\"v1\",\"algorithm\":\"AES-256-GCM\",\"kdf\":\"PBKDF2-SHA256\",\"salt\":\"097ae8a683393f63d92ada1a745daed81f3b1161a1fc649ae988935d3898adad\",\"iv\":\"74958e34fc44b02e555c759b\",\"iterations\":600000,\"ciphertext\":\"d0ca861a05c801f1b2f2843a37b699843d56fbc2b01df7537e57141dbaf06a2ac8fee95e975ba35a7a6edf4779bf2b1a1eae798475892cbbfb11fc0be696c65057be023338b371a71fce6181708d3e59281d58b59b9abf0c5809918f87d9eb4cc465639967a29cace405931623cc633f93155096ba458b43ccbfb03df89dc5c1f8bac0\",\"authTag\":\"af5c8a495d8744e032ab35ca6a49c4c7\"}"
+  "exportedAt": "2026-11-17T07:04:35.916Z",
+  "encrypted": "{\"version\":\"v1\",\"algorithm\":\"AES-256-GCM\",\"kdf\":\"PBKDF2-SHA256\",\"salt\":\"01e3b2da24f3566fcd3a258fa2c3530ce24540ded33ac4d1c3b25940aaef5803\",\"iv\":\"4eda62ed7fa8599b171510d4\",\"iterations\":600000,\"ciphertext\":\"277378ffc2afc5cf30a8fc972e129618672c6a4d39b6060d564afffc772f9cc3b9aeb6e2a8476a46d364733325bd9f5862a60bbcfbc00f0e5b522bddfbe35912876b3785defb61a73846d6d170a119efcffe1211457aacd8d33b5a34bf5c60c7e79cc3e5ddeda4cbad3acb9cdb100e1465a90f9accd7f27a7fd7bcbfb3f8ea8b516e5f\",\"authTag\":\"39d4a3b648068a74f0793f59c5c04136\"}"
 }
