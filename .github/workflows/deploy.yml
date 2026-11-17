@@ -42,11 +42,23 @@ jobs:
         
       # dist/data is populated from public/data by Vite
       # NEVER delete dist/data - it contains legitimate encrypted content
+      
+      # GitHub Pages is in legacy mode serving from branch root
+      # Copy dist contents to root for deployment
+      - name: Prepare root for GitHub Pages
+        run: |
+          # Remove source files that shouldn't be served
+          rm -f index.html
+          # Copy built files to root
+          cp -r dist/* .
+          # Verify data directory
+          ls -la data/
+          echo "✓ Built files copied to root for GitHub Pages"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
-          path: ./dist
+          path: .
 
   deploy:
     environment:
