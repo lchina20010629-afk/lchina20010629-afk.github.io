@@ -19,13 +19,14 @@ const TEST_PASSWORD = 'TestPass123!';
 test.describe('PWA Upgrade Scenarios', () => {
   let buildADir: string;
   let buildBDir: string;
+  const projectRoot = process.cwd();
 
   test.beforeAll(() => {
     // Create two production builds to simulate upgrade
     console.log('\n🔨 Building version A and B for upgrade testing...\n');
     
-    buildADir = '/tmp/pwa-test-build-a';
-    buildBDir = '/tmp/pwa-test-build-b';
+    buildADir = join(projectRoot, 'test-output/pwa-build-a');
+    buildBDir = join(projectRoot, 'test-output/pwa-build-b');
     
     // Clean old builds
     [buildADir, buildBDir].forEach(dir => {
@@ -36,23 +37,23 @@ test.describe('PWA Upgrade Scenarios', () => {
     // Build version A
     console.log('Building version A...');
     execSync('npm run build', { 
-      cwd: '/agent/repos/lchina20010629-afk.github.io',
-      stdio: 'pipe'
+      cwd: projectRoot,
+      stdio: 'inherit'
     });
-    execSync(`cp -r /agent/repos/lchina20010629-afk.github.io/dist/* ${buildADir}/`, { stdio: 'pipe' });
+    execSync(`cp -r ${join(projectRoot, 'dist')}/* ${buildADir}/`, { stdio: 'pipe' });
     
     // Modify service worker version for build B
     console.log('Building version B (modified SW)...');
-    const swPath = '/agent/repos/lchina20010629-afk.github.io/public/sw.js';
+    const swPath = join(projectRoot, 'public/sw.js');
     const swContent = readFileSync(swPath, 'utf-8');
     const swModified = swContent.replace("const CACHE_VERSION = 'v1'", "const CACHE_VERSION = 'v2'");
     writeFileSync(swPath, swModified, 'utf-8');
     
     execSync('npm run build', { 
-      cwd: '/agent/repos/lchina20010629-afk.github.io',
-      stdio: 'pipe'
+      cwd: projectRoot,
+      stdio: 'inherit'
     });
-    execSync(`cp -r /agent/repos/lchina20010629-afk.github.io/dist/* ${buildBDir}/`, { stdio: 'pipe' });
+    execSync(`cp -r ${join(projectRoot, 'dist')}/* ${buildBDir}/`, { stdio: 'pipe' });
     
     // Restore original SW
     writeFileSync(swPath, swContent, 'utf-8');
