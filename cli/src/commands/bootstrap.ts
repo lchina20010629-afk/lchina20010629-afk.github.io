@@ -27,8 +27,25 @@ export async function bootstrap(options: BootstrapOptions): Promise<void> {
     const existingManifest = await loadManifest(manifestPath);
     
     if (existingManifest) {
-      // Manifest exists - verify password before allowing any operations
-      console.log('Existing manifest found - verifying password...');
+      // Check if it's an empty placeholder or real vault
+      const isEmpty = !existingManifest.vault.verifier.salt || 
+                      existingManifest.vault.verifier.salt === '' ||
+                      !existingManifest.vault.verifier.verifier ||
+                      existingManifest.vault.verifier.verifier === '';
+      
+      if (isEmpty) {
+        // Empty placeholder - initialize it
+        console.log('Found empty placeholder vault - initializing...');
+        const verifier = createPasswordVerifier(password);
+        existingManifest.vault.verifier = verifier;
+        existingManifest.vault.createdAt = new Date().toISOString();
+        await saveManifestAtomic(manifestPath, existingManifest);
+        console.log('✅ Empty vault initialized with password verifier');
+        return;
+      }
+      
+      // Real vault exists - verify password
+      console.log('Existing vault found - verifying password...');
       
       const isValid = verifyPassword(password, existingManifest.vault.verifier);
       

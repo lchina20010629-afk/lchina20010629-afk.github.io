@@ -47,10 +47,12 @@ export function createPasswordVerifier(password: string): PasswordVerifier {
 
 /**
  * Verify password against stored verifier
+ * Returns true if valid, false if empty vault (not initialized)
  */
 export function verifyPassword(password: string, verifier: PasswordVerifier): boolean {
-  if (!verifier.salt || !verifier.verifier) {
-    throw new Error('Invalid verifier: empty salt or verifier');
+  // Empty vault (placeholder) - not yet initialized
+  if (!verifier.salt || !verifier.verifier || verifier.salt === '' || verifier.verifier === '') {
+    return false; // Empty vault, not an error
   }
   
   const salt = Buffer.from(verifier.salt, 'hex');

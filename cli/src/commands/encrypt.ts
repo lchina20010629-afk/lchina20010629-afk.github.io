@@ -68,7 +68,7 @@ export async function encrypt(options: EncryptOptions): Promise<void> {
     } else {
       // Create new manifest
       console.log('Creating new manifest...');
-      const { createPasswordVerifier } = await import('../lib/crypto');
+      const { createPasswordVerifier } = await import('../lib/crypto.js');
       const verifier = createPasswordVerifier(password);
       manifest = createManifest(verifier);
     }
@@ -115,7 +115,30 @@ export async function encrypt(options: EncryptOptions): Promise<void> {
     }
     
     // Create entry data with images as references
-    const entryData: any = { ...inputData };
+    let entryData: any;
+    
+    if (options.type === 'course') {
+      // Course needs content wrapper for UI compatibility
+      // Support both formats: root courses[] OR content.{courses,totalMinutes,notes}
+      if (inputData.content) {
+        // Already has content wrapper
+        entryData = { ...inputData };
+      } else if (inputData.courses) {
+        // Root courses - wrap in content for UI
+        entryData = {
+          content: {
+            courses: inputData.courses,
+            totalMinutes: inputData.totalMinutes || 0,
+            notes: inputData.notes || ''
+          }
+        };
+      } else {
+        throw new Error('Course entry must have either "courses" or "content.courses"');
+      }
+    } else {
+      // Non-course entries
+      entryData = { ...inputData };
+    }
     
     if (attachments.length > 0) {
       entryData.images = attachments.map(a => ({
