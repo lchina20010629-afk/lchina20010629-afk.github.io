@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { execSync } from 'child_process';
-import { mkdirSync, writeFileSync, rmSync } from 'fs';
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 const TEST_PASSWORD = 'TestPass123!';
@@ -44,7 +44,7 @@ test.describe('PWA Upgrade Scenarios', () => {
     // Modify service worker version for build B
     console.log('Building version B (modified SW)...');
     const swPath = '/agent/repos/lchina20010629-afk.github.io/public/sw.js';
-    const swContent = require('fs').readFileSync(swPath, 'utf-8');
+    const swContent = readFileSync(swPath, 'utf-8');
     const swModified = swContent.replace("const CACHE_VERSION = 'v1'", "const CACHE_VERSION = 'v2'");
     writeFileSync(swPath, swModified, 'utf-8');
     
