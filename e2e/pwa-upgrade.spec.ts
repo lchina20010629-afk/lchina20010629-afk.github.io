@@ -62,9 +62,9 @@ test.describe('PWA Upgrade Scenarios', () => {
 
   test('should detect service worker update', async ({ page }) => {
     // Start static server for build A
-    const server: ChildProcess = spawn('npx', ['http-server', buildADir, '-p', '8177', '--silent'], {
-      stdio: 'pipe',
-      shell: true
+    const serverArgs = ['http-server', buildADir, '-p', '8177', '--silent'];
+    const server: ChildProcess = spawn(process.platform === 'win32' ? 'npx.cmd' : 'npx', serverArgs, {
+      stdio: 'pipe'
     });
     
     await new Promise(resolve => setTimeout(resolve, 3000));
@@ -113,9 +113,9 @@ test.describe('PWA Upgrade Scenarios', () => {
   });
 
   test('should handle manifest content updates with same date', async ({ page }) => {
-    const server: ChildProcess = spawn('npx', ['http-server', buildADir, '-p', '8178', '--silent'], {
-      stdio: 'pipe',
-      shell: true
+    const serverArgs = ['http-server', buildADir, '-p', '8178', '--silent'];
+    const server: ChildProcess = spawn(process.platform === 'win32' ? 'npx.cmd' : 'npx', serverArgs, {
+      stdio: 'pipe'
     });
     
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -143,9 +143,9 @@ test.describe('PWA Upgrade Scenarios', () => {
   });
 
   test('should mark offline and sync on reconnect', async ({ page, context }) => {
-    const server: ChildProcess = spawn('npx', ['http-server', buildADir, '-p', '8179', '--silent'], {
-      stdio: 'pipe',
-      shell: true
+    const serverArgs = ['http-server', buildADir, '-p', '8179', '--silent'];
+    const server: ChildProcess = spawn(process.platform === 'win32' ? 'npx.cmd' : 'npx', serverArgs, {
+      stdio: 'pipe'
     });
     
     await new Promise(resolve => setTimeout(resolve, 2000));
