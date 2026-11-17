@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: getByText('保险库已解锁')
+Locator: locator('.course-columns')
 Expected: visible
 Timeout: 5000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" getByText('保险库已解锁') with timeout 5000ms
-  - waiting for getByText('保险库已解锁')
+  - Expect "toBeVisible" locator('.course-columns') with timeout 5000ms
+  - waiting for locator('.course-columns')
 
 ```
 
@@ -53,60 +53,7 @@ Call log:
   - 'button "当前主题: 跟随系统"':
     - img
 - main:
-  - heading "设置" [level=1]
-  - paragraph: 管理您的个人数据和偏好
-  - heading "🔒 保险库状态" [level=2]
-  - heading "初始化保险库" [level=3]
-  - paragraph: 请设置一个强密码来保护您的数据
-  - text: 主密码
-  - textbox "主密码":
-    - /placeholder: 至少16个字符，包含大小写字母、数字和特殊字符
-    - text: test-course-password-123
-  - paragraph: "建议包含大写字母；避免使用常见模式: 123"
-  - text: 确认密码
-  - textbox "确认密码":
-    - /placeholder: 再次输入密码
-    - text: test-course-password-123
-  - img
-  - text: "密码强度不足：建议包含大写字母；避免使用常见模式: 123"
-  - img
-  - strong: 重要提示：
-  - list:
-    - listitem:
-      - text: 密码一旦忘记
-      - strong: 无法恢复
-    - listitem: 请务必记住或安全保存您的密码
-    - listitem: 建议定期导出加密备份
-  - button "取消"
-  - button "确认初始化"
-  - heading "🎨 外观设置" [level=2]
-  - heading "主题模式" [level=3]
-  - button "浅色":
-    - img
-    - text: 浅色
-  - button "深色":
-    - img
-    - text: 深色
-  - button "跟随系统":
-    - img
-    - text: 跟随系统
-  - heading "调色板" [level=3]
-  - paragraph: 选择您喜欢的配色方案
-  - button "米白墨绿":
-    - text: 米白墨绿
-    - img
-  - button "清爽蓝"
-  - button "暖杏"
-  - button "淡紫"
-  - heading "ℹ️ 隐私与安全说明" [level=2]
-  - list:
-    - listitem: ✅ 所有个人数据使用 AES-256-GCM 加密
-    - listitem: ✅ 密钥派生使用 PBKDF2-SHA256 (600,000 次迭代)
-    - listitem: ✅ 数据仅保存在当前浏览器的 IndexedDB 中
-    - listitem: ⚠️ 公开的 GitHub 仓库仅包含加密后的密文
-    - listitem: ⚠️ 弱密码可能被离线暴力破解，请使用强密码
-    - listitem: ⚠️ 浏览器清除数据会导致本地内容丢失
-    - listitem: 📦 建议定期导出加密备份到安全位置
+  - paragraph: 记录不存在
 - img
 - heading "安装应用到Desktop" [level=3]
 - paragraph: 点击地址栏右侧的安装图标，或在浏览器菜单中选择"安装应用"。
@@ -120,13 +67,6 @@ Call log:
 # Test source
 
 ```ts
-  83  |     }
-  84  | 
-  85  |     // Verify course structure fields are accessible
-  86  |     await expect(page.locator('.completion-toggle')).toHaveCount(4);
-  87  |     await expect(page.locator('.target-time').first()).toBeVisible();
-  88  | 
-  89  |     // Step 6: Refresh page (locks vault)
   90  |     await page.reload();
   91  |     await page.waitForLoadState('networkidle');
   92  | 
@@ -220,15 +160,15 @@ Call log:
   180 |     await page.locator('#password').fill(testPassword);
   181 |     await page.locator('#confirm-password').fill(testPassword);
   182 |     await page.getByRole('button', { name: '确认初始化' }).click();
-> 183 |     await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
-      |                                            ^ Error: expect(locator).toBeVisible() failed
+  183 |     await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
   184 | 
   185 |     // Navigate to course detail
   186 |     await page.goto(`/#/learning/${todayDate}`);
   187 |     await page.waitForLoadState('networkidle');
   188 |     
   189 |     // Verify loaded
-  190 |     await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
+> 190 |     await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
+      |                                                   ^ Error: expect(locator).toBeVisible() failed
   191 |     
   192 |     // Refresh to lock
   193 |     await page.reload();

@@ -12,109 +12,59 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
+Error: expect(received).toBe(expected) // Object.is equality
 
-Locator: getByText('保险库已解锁')
-Expected: visible
-Timeout: 5000ms
-Error: element(s) not found
-
-Call log:
-  - Expect "toBeVisible" getByText('保险库已解锁') with timeout 5000ms
-  - waiting for getByText('保险库已解锁')
-
+Expected: true
+Received: false
 ```
 
+# Page snapshot
+
 ```yaml
-- complementary:
-  - heading "个人成长" [level=1]
-  - paragraph: 生活 • 学习 • 成长
-  - navigation:
-    - link "今日总览":
-      - /url: "#/"
-      - img
-      - text: 今日总览
-    - link "生活日记":
-      - /url: "#/diary"
-      - img
-      - text: 生活日记
-    - link "成长学习":
-      - /url: "#/learning"
-      - img
-      - text: 成长学习
-    - link "总结回顾":
-      - /url: "#/reviews"
-      - img
-      - text: 总结回顾
-    - link "设置":
-      - /url: "#/settings"
-      - img
-      - text: 设置
-  - 'button "当前主题: 跟随系统"':
-    - img
-- main:
-  - heading "设置" [level=1]
-  - paragraph: 管理您的个人数据和偏好
-  - heading "🔒 保险库状态" [level=2]
-  - heading "初始化保险库" [level=3]
-  - paragraph: 请设置一个强密码来保护您的数据
-  - text: 主密码
-  - textbox "主密码":
-    - /placeholder: 至少16个字符，包含大小写字母、数字和特殊字符
-    - text: test-course-password-123
-  - paragraph: "建议包含大写字母；避免使用常见模式: 123"
-  - text: 确认密码
-  - textbox "确认密码":
-    - /placeholder: 再次输入密码
-    - text: test-course-password-123
-  - img
-  - text: "密码强度不足：建议包含大写字母；避免使用常见模式: 123"
-  - img
-  - strong: 重要提示：
-  - list:
-    - listitem:
-      - text: 密码一旦忘记
-      - strong: 无法恢复
-    - listitem: 请务必记住或安全保存您的密码
-    - listitem: 建议定期导出加密备份
-  - button "取消"
-  - button "确认初始化"
-  - heading "🎨 外观设置" [level=2]
-  - heading "主题模式" [level=3]
-  - button "浅色":
-    - img
-    - text: 浅色
-  - button "深色":
-    - img
-    - text: 深色
-  - button "跟随系统":
-    - img
-    - text: 跟随系统
-  - heading "调色板" [level=3]
-  - paragraph: 选择您喜欢的配色方案
-  - button "米白墨绿":
-    - text: 米白墨绿
-    - img
-  - button "清爽蓝"
-  - button "暖杏"
-  - button "淡紫"
-  - heading "ℹ️ 隐私与安全说明" [level=2]
-  - list:
-    - listitem: ✅ 所有个人数据使用 AES-256-GCM 加密
-    - listitem: ✅ 密钥派生使用 PBKDF2-SHA256 (600,000 次迭代)
-    - listitem: ✅ 数据仅保存在当前浏览器的 IndexedDB 中
-    - listitem: ⚠️ 公开的 GitHub 仓库仅包含加密后的密文
-    - listitem: ⚠️ 弱密码可能被离线暴力破解，请使用强密码
-    - listitem: ⚠️ 浏览器清除数据会导致本地内容丢失
-    - listitem: 📦 建议定期导出加密备份到安全位置
-- img
-- heading "安装应用到Desktop" [level=3]
-- paragraph: 点击地址栏右侧的安装图标，或在浏览器菜单中选择"安装应用"。
-- button "关闭":
-  - img
-- button "检查更新":
-  - img
-  - text: 检查更新
+- generic [ref=f1e2]:
+  - generic [ref=f1e3]:
+    - complementary [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - heading "个人成长" [level=1] [ref=f1e6]
+        - paragraph [ref=f1e7]: 生活 • 学习 • 成长
+      - navigation [ref=f1e8]:
+        - link "今日总览" [ref=f1e9] [cursor=pointer]:
+          - /url: "#/"
+        - link "生活日记" [ref=f1e14] [cursor=pointer]:
+          - /url: "#/diary"
+        - link "成长学习" [active] [ref=f1e18] [cursor=pointer]:
+          - /url: "#/learning"
+        - link "总结回顾" [ref=f1e22] [cursor=pointer]:
+          - /url: "#/reviews"
+        - link "设置" [ref=f1e27] [cursor=pointer]:
+          - /url: "#/settings"
+      - 'button "当前主题: 跟随系统" [ref=f1e33] [cursor=pointer]'
+    - main [ref=f1e36]:
+      - generic [ref=f1e37]:
+        - generic [ref=f1e39]:
+          - heading "成长学习" [level=1] [ref=f1e40]
+          - link "今日学习" [ref=f1e41] [cursor=pointer]:
+            - /url: "#/learning#/learning/2026-11-17"
+        - generic [ref=f1e43]:
+          - heading "四列学习法" [level=3] [ref=f1e44]
+          - generic [ref=f1e45]:
+            - generic [ref=f1e46]:
+              - strong [ref=f1e47]: 英语
+              - generic [ref=f1e48]: 10分钟
+            - generic [ref=f1e49]:
+              - strong [ref=f1e50]: 泰语
+              - generic [ref=f1e51]: 8分钟
+            - generic [ref=f1e52]:
+              - strong [ref=f1e53]: 修身养性
+              - generic [ref=f1e54]: 6分钟
+            - generic [ref=f1e55]:
+              - strong [ref=f1e56]: 生财有道
+              - generic [ref=f1e57]: 6分钟
+        - link "2026-11-17 已发布" [ref=f1e59] [cursor=pointer]:
+          - /url: "#/learning#/learning/2026-11-17"
+          - generic [ref=f1e60]: 2026-11-17
+          - generic [ref=f1e63]: 已发布
+  - button "检查更新" [ref=f1e64] [cursor=pointer]
 ```
 
 # Test source
@@ -143,7 +93,7 @@ Call log:
   21  |  * - Content structure supports both root and wrapped formats
   22  |  */
   23  | test.describe('Course Click and Detail Flow', () => {
-  24  |   const testPassword = 'test-course-password-123';
+  24  |   const testPassword = 'TestPass123!';
   25  |   const todayDate = getTodayDate();
   26  | 
   27  |   test.beforeEach(async ({ page, context }) => {
@@ -170,8 +120,7 @@ Call log:
   48  |     await page.locator('#password').fill(testPassword);
   49  |     await page.locator('#confirm-password').fill(testPassword);
   50  |     await page.getByRole('button', { name: '确认初始化' }).click();
-> 51  |     await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
-      |                                            ^ Error: expect(locator).toBeVisible() failed
+  51  |     await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
   52  | 
   53  |     // Step 2: Navigate to Learning page
   54  |     await page.click('a[href="#/learning"]');
@@ -181,7 +130,8 @@ Call log:
   58  |     const hasCourses = await page.locator('.learning-card').count() > 0;
   59  |     const hasEmptyState = await page.locator('text=暂无学习记录').isVisible().catch(() => false);
   60  |     
-  61  |     expect(hasCourses || hasEmptyState).toBe(true);
+> 61  |     expect(hasCourses || hasEmptyState).toBe(true);
+      |                                         ^ Error: expect(received).toBe(expected) // Object.is equality
   62  | 
   63  |     // Step 4: Create or navigate to today's course
   64  |     if (!hasCourses) {
@@ -272,4 +222,14 @@ Call log:
   149 |     // Navigate to learning
   150 |     await page.click('a[href="#/learning"]');
   151 |     await page.waitForURL(/.*#\/learning$/);
+  152 | 
+  153 |     // Should handle published course loading even if structure varies
+  154 |     // The actualData = courseData.content || courseData line handles both
+  155 |     const hasCourses = await page.locator('.learning-card').isVisible().catch(() => false);
+  156 |     expect(hasCourses !== undefined).toBe(true);
+  157 |   });
+  158 | 
+  159 |   test('should show UnlockPrompt when accessing locked course detail directly', async ({ page }) => {
+  160 |     // Simulate accessing /#/learning/2026-11-17 directly without unlock
+  161 |     await page.goto(`/#/learning/${todayDate}`);
 ```

@@ -55,7 +55,8 @@ test.describe('Course Click and Detail Flow', () => {
     await page.waitForURL(/.*#\/learning$/);
 
     // Step 3: Verify course list loads (or empty state appears)
-    const hasCourses = await page.locator('.learning-card').count() > 0;
+    const courseCount = await page.locator('.learning-card').count();
+    const hasCourses = courseCount > 0;
     const hasEmptyState = await page.locator('text=暂无学习记录').isVisible().catch(() => false);
     
     expect(hasCourses || hasEmptyState).toBe(true);
