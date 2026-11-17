@@ -75,12 +75,10 @@ export function Learning() {
         <header className="page-header">
           <h1>成长学习</h1>
         </header>
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <Lock size={24} />
-            <p>请先解锁保险库才能查看学习记录</p>
-          </div>
-        </div>
+        <UnlockPrompt 
+          message="请先解锁保险库才能查看学习记录和今日课程"
+          returnPath="/learning"
+        />
       </div>
     );
   }
