@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, RefreshCw, X, Info } from 'lucide-react';
+import { Download, RefreshCw, X } from 'lucide-react';
 import { isStandalone, getInstallInstructions, activateUpdate, checkForUpdates } from '../lib/sw';
 
 export function PWAPrompt() {
