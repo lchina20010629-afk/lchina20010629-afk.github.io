@@ -21,7 +21,7 @@ function getTodayDate(): string {
  * - Content structure supports both root and wrapped formats
  */
 test.describe('Course Click and Detail Flow', () => {
-  const testPassword = 'test-course-password-123';
+  const testPassword = 'TestPass123!';
   const todayDate = getTodayDate();
 
   test.beforeEach(async ({ page, context }) => {

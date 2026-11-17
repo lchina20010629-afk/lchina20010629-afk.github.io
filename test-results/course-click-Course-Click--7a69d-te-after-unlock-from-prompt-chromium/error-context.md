@@ -7,214 +7,242 @@
 # Test info
 
 - Name: course-click.spec.ts >> Course Click and Detail Flow >> should preserve course detail state after unlock from prompt
-- Location: e2e/course-click.spec.ts:164:3
+- Location: e2e/course-click.spec.ts:176:3
 
 # Error details
 
 ```
-Test timeout of 30000ms exceeded.
-```
+Error: expect(locator).toBeVisible() failed
 
-```
-Error: page.fill: Test timeout of 30000ms exceeded.
+Locator: getByText('保险库已解锁')
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
 Call log:
-  - waiting for locator('input[type="password"]')
+  - Expect "toBeVisible" getByText('保险库已解锁') with timeout 5000ms
+  - waiting for getByText('保险库已解锁')
 
 ```
-
-# Page snapshot
 
 ```yaml
-- generic [ref=f1e2]:
-  - generic [ref=f1e3]:
-    - complementary [ref=f1e4]:
-      - generic [ref=f1e5]:
-        - heading "个人成长" [level=1] [ref=f1e6]
-        - paragraph [ref=f1e7]: 生活 • 学习 • 成长
-      - navigation [ref=f1e8]:
-        - link "今日总览" [ref=f1e9] [cursor=pointer]:
-          - /url: "#/"
-        - link "生活日记" [ref=f1e14] [cursor=pointer]:
-          - /url: "#/diary"
-        - link "成长学习" [ref=f1e18] [cursor=pointer]:
-          - /url: "#/learning"
-        - link "总结回顾" [ref=f1e22] [cursor=pointer]:
-          - /url: "#/reviews"
-        - link "设置" [ref=f1e27] [cursor=pointer]:
-          - /url: "#/settings"
-      - 'button "当前主题: 跟随系统" [ref=f1e33] [cursor=pointer]'
-    - main [ref=f1e36]:
-      - generic [ref=f1e37]:
-        - generic [ref=f1e39]:
-          - heading "今日总览" [level=1] [ref=f1e40]
-          - paragraph [ref=f1e41]: 2026-11-17 • 今天
-        - generic [ref=f1e42]:
-          - generic [ref=f1e43]:
-            - heading "生活日记" [level=3] [ref=f1e47]
-            - paragraph [ref=f1e48]: 记录今天的点滴
-            - link "查看日记" [ref=f1e49] [cursor=pointer]:
-              - /url: "#/diary"
-          - generic [ref=f1e50]:
-            - heading "成长学习" [level=3] [ref=f1e54]
-            - paragraph [ref=f1e55]: 今日学习进度
-            - link "查看学习" [ref=f1e56] [cursor=pointer]:
-              - /url: "#/learning"
-          - generic [ref=f1e57]:
-            - heading "总结回顾" [level=3] [ref=f1e62]
-            - paragraph [ref=f1e63]: 周/月/年度回顾
-            - link "查看总结" [ref=f1e64] [cursor=pointer]:
-              - /url: "#/reviews"
-        - generic [ref=f1e66]:
-          - heading "暂无数据" [level=3] [ref=f1e71]
-          - paragraph [ref=f1e72]: 这是一个静态网站，所有数据均保存在浏览器本地。请先在设置中初始化保险库并设置密码，然后开始记录您的生活和学习历程。
-          - button "前往设置" [ref=f1e73] [cursor=pointer]
-        - generic [ref=f1e74]:
-          - heading "📅 外部自动化流程说明" [level=4] [ref=f1e75]
-          - paragraph [ref=f1e76]: 您的日常流程由 Grok Bot 在外部自动运行（非本网站）：
-          - list [ref=f1e77]:
-            - listitem [ref=f1e78]: 每天 10:30 - 课程准备
-            - listitem [ref=f1e79]: 每天 23:30 - 日记整理润色
-            - listitem [ref=f1e80]: 每周日 - 周总结
-            - listitem [ref=f1e81]: 每月最后一天 - 月总结
-            - listitem [ref=f1e82]: 12月31日 - 年终总结
-          - paragraph [ref=f1e83]: ⚠️ 本网站是静态站点，托管在 GitHub Pages，没有服务器端功能，不会自动同步或运行任何自动化流程。所有数据仅保存在您当前浏览器中。
-  - generic [ref=f1e85]:
-    - generic [ref=f1e89]:
-      - heading "安装应用到Desktop" [level=3] [ref=f1e90]
-      - paragraph [ref=f1e91]: 点击地址栏右侧的安装图标，或在浏览器菜单中选择"安装应用"。
-    - button "关闭" [ref=f1e92] [cursor=pointer]
-  - button "检查更新" [ref=f1e96] [cursor=pointer]
+- complementary:
+  - heading "个人成长" [level=1]
+  - paragraph: 生活 • 学习 • 成长
+  - navigation:
+    - link "今日总览":
+      - /url: "#/"
+      - img
+      - text: 今日总览
+    - link "生活日记":
+      - /url: "#/diary"
+      - img
+      - text: 生活日记
+    - link "成长学习":
+      - /url: "#/learning"
+      - img
+      - text: 成长学习
+    - link "总结回顾":
+      - /url: "#/reviews"
+      - img
+      - text: 总结回顾
+    - link "设置":
+      - /url: "#/settings"
+      - img
+      - text: 设置
+  - 'button "当前主题: 跟随系统"':
+    - img
+- main:
+  - heading "设置" [level=1]
+  - paragraph: 管理您的个人数据和偏好
+  - heading "🔒 保险库状态" [level=2]
+  - heading "初始化保险库" [level=3]
+  - paragraph: 请设置一个强密码来保护您的数据
+  - text: 主密码
+  - textbox "主密码":
+    - /placeholder: 至少16个字符，包含大小写字母、数字和特殊字符
+    - text: test-course-password-123
+  - paragraph: "建议包含大写字母；避免使用常见模式: 123"
+  - text: 确认密码
+  - textbox "确认密码":
+    - /placeholder: 再次输入密码
+    - text: test-course-password-123
+  - img
+  - text: "密码强度不足：建议包含大写字母；避免使用常见模式: 123"
+  - img
+  - strong: 重要提示：
+  - list:
+    - listitem:
+      - text: 密码一旦忘记
+      - strong: 无法恢复
+    - listitem: 请务必记住或安全保存您的密码
+    - listitem: 建议定期导出加密备份
+  - button "取消"
+  - button "确认初始化"
+  - heading "🎨 外观设置" [level=2]
+  - heading "主题模式" [level=3]
+  - button "浅色":
+    - img
+    - text: 浅色
+  - button "深色":
+    - img
+    - text: 深色
+  - button "跟随系统":
+    - img
+    - text: 跟随系统
+  - heading "调色板" [level=3]
+  - paragraph: 选择您喜欢的配色方案
+  - button "米白墨绿":
+    - text: 米白墨绿
+    - img
+  - button "清爽蓝"
+  - button "暖杏"
+  - button "淡紫"
+  - heading "ℹ️ 隐私与安全说明" [level=2]
+  - list:
+    - listitem: ✅ 所有个人数据使用 AES-256-GCM 加密
+    - listitem: ✅ 密钥派生使用 PBKDF2-SHA256 (600,000 次迭代)
+    - listitem: ✅ 数据仅保存在当前浏览器的 IndexedDB 中
+    - listitem: ⚠️ 公开的 GitHub 仓库仅包含加密后的密文
+    - listitem: ⚠️ 弱密码可能被离线暴力破解，请使用强密码
+    - listitem: ⚠️ 浏览器清除数据会导致本地内容丢失
+    - listitem: 📦 建议定期导出加密备份到安全位置
+- img
+- heading "安装应用到Desktop" [level=3]
+- paragraph: 点击地址栏右侧的安装图标，或在浏览器菜单中选择"安装应用"。
+- button "关闭":
+  - img
+- button "检查更新":
+  - img
+  - text: 检查更新
 ```
 
 # Test source
 
 ```ts
-  67  |     // Verify column headers show target minutes
-  68  |     const columns = ['english', 'thai', 'character', 'wealth'];
-  69  |     for (const col of columns) {
-  70  |       const columnSelector = `.course-column:has(h3:has-text("${col === 'english' ? 'English' : col === 'thai' ? 'ไทย' : col === 'character' ? '修身养性' : '生财有道'}"))`;
-  71  |       await expect(page.locator(columnSelector)).toBeVisible();
-  72  |     }
-  73  | 
-  74  |     // Verify course structure fields are accessible
-  75  |     await expect(page.locator('.completion-toggle')).toHaveCount(4);
-  76  |     await expect(page.locator('.target-time').first()).toBeVisible();
-  77  | 
-  78  |     // Step 6: Refresh page (locks vault)
-  79  |     await page.reload();
-  80  |     await page.waitForLoadState('networkidle');
-  81  | 
-  82  |     // Step 7: Verify UnlockPrompt appears (not just text message)
-  83  |     await expect(page.locator('text=保险库已锁定')).toBeVisible({ timeout: 3000 });
-  84  |     await expect(page.locator('input#unlock-password')).toBeVisible();
-  85  |     await expect(page.locator('button:has-text("解锁")')).toBeVisible();
-  86  | 
-  87  |     // Step 8: Unlock with password
-  88  |     await page.fill('input#unlock-password', testPassword);
-  89  |     await page.click('button:has-text("解锁")');
-  90  | 
-  91  |     // Step 9: Verify detail content is accessible again
-  92  |     await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
-  93  |     expect(await page.locator('.course-column').count()).toBe(4);
-  94  | 
-  95  |     // Verify content sections are present (materials, exercises, reflection)
-  96  |     // Even with totalMinutes=0, columns should be clickable and show structure
-  97  |     const firstColumn = page.locator('.course-column').first();
-  98  |     await expect(firstColumn.locator('.column-header')).toBeVisible();
-  99  |     await expect(firstColumn.locator('.completion-toggle')).toBeVisible();
-  100 |   });
+  83  |     }
+  84  | 
+  85  |     // Verify course structure fields are accessible
+  86  |     await expect(page.locator('.completion-toggle')).toHaveCount(4);
+  87  |     await expect(page.locator('.target-time').first()).toBeVisible();
+  88  | 
+  89  |     // Step 6: Refresh page (locks vault)
+  90  |     await page.reload();
+  91  |     await page.waitForLoadState('networkidle');
+  92  | 
+  93  |     // Step 7: Verify UnlockPrompt appears (not just text message)
+  94  |     await expect(page.locator('text=保险库已锁定')).toBeVisible({ timeout: 3000 });
+  95  |     await expect(page.locator('input#unlock-password')).toBeVisible();
+  96  |     await expect(page.locator('button:has-text("解锁")')).toBeVisible();
+  97  | 
+  98  |     // Step 8: Unlock with password
+  99  |     await page.fill('input#unlock-password', testPassword);
+  100 |     await page.click('button:has-text("解锁")');
   101 | 
-  102 |   test('should handle published course with wrapped content structure', async ({ page }) => {
-  103 |     // This test validates the dual structure support:
-  104 |     // 1. Root: {courses: [...], totalMinutes, notes}
-  105 |     // 2. Wrapped: {content: {courses: [...], totalMinutes, notes}}
-  106 | 
-  107 |     // Mock published manifest with wrapped structure
-  108 |     await page.route('**/data/manifest.json', async route => {
-  109 |       await route.fulfill({
-  110 |         status: 200,
-  111 |         contentType: 'application/json',
-  112 |         body: JSON.stringify({
-  113 |           verifier: {
-  114 |             salt: '1b8181d06caa8f6c0bac',
-  115 |             verifier: 'test-verifier-hex',
-  116 |             iterations: 600000
-  117 |           },
-  118 |           entries: [
-  119 |             {
-  120 |               type: 'course',
-  121 |               date: todayDate,
-  122 |               filename: `course-${todayDate}.json`,
-  123 |               sha256: 'test-sha'
-  124 |             }
-  125 |           ]
-  126 |         })
-  127 |       });
-  128 |     });
-  129 | 
-  130 |     // Initialize vault
-  131 |     await page.goto('/');
-  132 |     await page.fill('input[type="password"]', testPassword);
-  133 |     await page.fill('input[placeholder*="确认"]', testPassword);
-  134 |     await page.click('button:has-text("初始化")');
-  135 |     await expect(page.locator('text=初始化成功')).toBeVisible();
-  136 | 
-  137 |     // Navigate to learning
-  138 |     await page.click('a[href="#/learning"]');
-  139 |     await page.waitForURL(/.*#\/learning$/);
+  102 |     // Step 9: Verify detail content is accessible again
+  103 |     await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
+  104 |     expect(await page.locator('.course-column').count()).toBe(4);
+  105 | 
+  106 |     // Verify content sections are present (materials, exercises, reflection)
+  107 |     // Even with totalMinutes=0, columns should be clickable and show structure
+  108 |     const firstColumn = page.locator('.course-column').first();
+  109 |     await expect(firstColumn.locator('.column-header')).toBeVisible();
+  110 |     await expect(firstColumn.locator('.completion-toggle')).toBeVisible();
+  111 |   });
+  112 | 
+  113 |   test('should handle published course with wrapped content structure', async ({ page }) => {
+  114 |     // This test validates the dual structure support:
+  115 |     // 1. Root: {courses: [...], totalMinutes, notes}
+  116 |     // 2. Wrapped: {content: {courses: [...], totalMinutes, notes}}
+  117 | 
+  118 |     // Mock published manifest with wrapped structure
+  119 |     await page.route('**/data/manifest.json', async route => {
+  120 |       await route.fulfill({
+  121 |         status: 200,
+  122 |         contentType: 'application/json',
+  123 |         body: JSON.stringify({
+  124 |           verifier: {
+  125 |             salt: '1b8181d06caa8f6c0bac',
+  126 |             verifier: 'test-verifier-hex',
+  127 |             iterations: 600000
+  128 |           },
+  129 |           entries: [
+  130 |             {
+  131 |               type: 'course',
+  132 |               date: todayDate,
+  133 |               filename: `course-${todayDate}.json`,
+  134 |               sha256: 'test-sha'
+  135 |             }
+  136 |           ]
+  137 |         })
+  138 |       });
+  139 |     });
   140 | 
-  141 |     // Should handle published course loading even if structure varies
-  142 |     // The actualData = courseData.content || courseData line handles both
-  143 |     const hasCourses = await page.locator('.learning-card').isVisible().catch(() => false);
-  144 |     expect(hasCourses !== undefined).toBe(true);
-  145 |   });
-  146 | 
-  147 |   test('should show UnlockPrompt when accessing locked course detail directly', async ({ page }) => {
-  148 |     // Simulate accessing /#/learning/2026-11-17 directly without unlock
-  149 |     await page.goto(`/#/learning/${todayDate}`);
-  150 |     await page.waitForLoadState('networkidle');
-  151 | 
-  152 |     // Should show UnlockPrompt, not just text
-  153 |     await expect(page.locator('text=保险库已锁定')).toBeVisible({ timeout: 3000 });
-  154 |     await expect(page.locator('input#unlock-password')).toBeVisible();
-  155 |     await expect(page.locator('button:has-text("解锁")')).toBeVisible();
-  156 | 
-  157 |     // Should have back button visible
-  158 |     await expect(page.locator('a.back-button')).toBeVisible();
-  159 |     
-  160 |     // Should have explanatory text
-  161 |     await expect(page.locator('text=页面刷新后需要重新输入密码')).toBeVisible();
-  162 |   });
+  141 |     // Initialize vault (already on settings page from beforeEach)
+  142 |     await page.getByRole('button', { name: '初始化保险库' }).click();
+  143 |     await page.waitForTimeout(200);
+  144 |     await page.locator('#password').fill(testPassword);
+  145 |     await page.locator('#confirm-password').fill(testPassword);
+  146 |     await page.getByRole('button', { name: '确认初始化' }).click();
+  147 |     await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
+  148 | 
+  149 |     // Navigate to learning
+  150 |     await page.click('a[href="#/learning"]');
+  151 |     await page.waitForURL(/.*#\/learning$/);
+  152 | 
+  153 |     // Should handle published course loading even if structure varies
+  154 |     // The actualData = courseData.content || courseData line handles both
+  155 |     const hasCourses = await page.locator('.learning-card').isVisible().catch(() => false);
+  156 |     expect(hasCourses !== undefined).toBe(true);
+  157 |   });
+  158 | 
+  159 |   test('should show UnlockPrompt when accessing locked course detail directly', async ({ page }) => {
+  160 |     // Simulate accessing /#/learning/2026-11-17 directly without unlock
+  161 |     await page.goto(`/#/learning/${todayDate}`);
+  162 |     await page.waitForLoadState('networkidle');
   163 | 
-  164 |   test('should preserve course detail state after unlock from prompt', async ({ page }) => {
-  165 |     // Initialize vault first
-  166 |     await page.goto('/');
-> 167 |     await page.fill('input[type="password"]', testPassword);
-      |                ^ Error: page.fill: Test timeout of 30000ms exceeded.
-  168 |     await page.fill('input[placeholder*="确认"]', testPassword);
-  169 |     await page.click('button:has-text("初始化")');
-  170 |     await expect(page.locator('text=初始化成功')).toBeVisible();
-  171 | 
-  172 |     // Navigate to course detail
-  173 |     await page.goto(`/#/learning/${todayDate}`);
-  174 |     await page.waitForLoadState('networkidle');
-  175 |     
-  176 |     // Verify loaded
-  177 |     await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
-  178 |     
-  179 |     // Refresh to lock
-  180 |     await page.reload();
-  181 |     await page.waitForLoadState('networkidle');
-  182 | 
-  183 |     // Unlock via prompt
-  184 |     await expect(page.locator('input#unlock-password')).toBeVisible();
-  185 |     await page.fill('input#unlock-password', testPassword);
-  186 |     await page.click('button:has-text("解锁")');
-  187 | 
-  188 |     // Should reload same page with content
-  189 |     await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
-  190 |     expect(await page.url()).toContain(`/learning/${todayDate}`);
-  191 |   });
-  192 | });
-  193 | 
+  164 |     // Should show UnlockPrompt, not just text
+  165 |     await expect(page.locator('text=保险库已锁定')).toBeVisible({ timeout: 3000 });
+  166 |     await expect(page.locator('input#unlock-password')).toBeVisible();
+  167 |     await expect(page.locator('button:has-text("解锁")')).toBeVisible();
+  168 | 
+  169 |     // Should have back button visible
+  170 |     await expect(page.locator('a.back-button')).toBeVisible();
+  171 |     
+  172 |     // Should have explanatory text
+  173 |     await expect(page.locator('text=页面刷新后需要重新输入密码')).toBeVisible();
+  174 |   });
+  175 | 
+  176 |   test('should preserve course detail state after unlock from prompt', async ({ page }) => {
+  177 |     // Initialize vault first (already on settings page from beforeEach)
+  178 |     await page.getByRole('button', { name: '初始化保险库' }).click();
+  179 |     await page.waitForTimeout(200);
+  180 |     await page.locator('#password').fill(testPassword);
+  181 |     await page.locator('#confirm-password').fill(testPassword);
+  182 |     await page.getByRole('button', { name: '确认初始化' }).click();
+> 183 |     await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
+      |                                            ^ Error: expect(locator).toBeVisible() failed
+  184 | 
+  185 |     // Navigate to course detail
+  186 |     await page.goto(`/#/learning/${todayDate}`);
+  187 |     await page.waitForLoadState('networkidle');
+  188 |     
+  189 |     // Verify loaded
+  190 |     await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
+  191 |     
+  192 |     // Refresh to lock
+  193 |     await page.reload();
+  194 |     await page.waitForLoadState('networkidle');
+  195 | 
+  196 |     // Unlock via prompt
+  197 |     await expect(page.locator('input#unlock-password')).toBeVisible();
+  198 |     await page.fill('input#unlock-password', testPassword);
+  199 |     await page.click('button:has-text("解锁")');
+  200 | 
+  201 |     // Should reload same page with content
+  202 |     await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
+  203 |     expect(await page.url()).toContain(`/learning/${todayDate}`);
+  204 |   });
+  205 | });
+  206 | 
 ```
