@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { setupPublishedCourseFixtures, FIXTURE_PASSWORD } from './fixtures/course-fixture';
 
 function getTodayDate(): string {
   const now = new Date();
@@ -21,10 +22,12 @@ function getTodayDate(): string {
  * - Content structure supports both root and wrapped formats
  */
 test.describe('Course Click and Detail Flow', () => {
-  const testPassword = 'TestPass123!';
   const todayDate = getTodayDate();
 
   test.beforeEach(async ({ page, context }) => {
+    // Setup synthetic published course fixtures BEFORE clearing state
+    await setupPublishedCourseFixtures(page, [todayDate]);
+    
     // Clear browser state
     await context.clearCookies();
     await page.goto('/#/settings');
@@ -42,11 +45,11 @@ test.describe('Course Click and Detail Flow', () => {
   });
 
   test('should handle complete course flow: init → list → click → detail → refresh → unlock → detail', async ({ page }) => {
-    // Step 1: Initialize vault (already on settings page from beforeEach)
+    // Step 1: Initialize vault with SAME password as fixtures
     await page.getByRole('button', { name: '初始化保险库' }).click();
     await page.waitForTimeout(200);
-    await page.locator('#password').fill(testPassword);
-    await page.locator('#confirm-password').fill(testPassword);
+    await page.locator('#password').fill(FIXTURE_PASSWORD);
+    await page.locator('#confirm-password').fill(FIXTURE_PASSWORD);
     await page.getByRole('button', { name: '确认初始化' }).click();
     await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
 
@@ -54,12 +57,17 @@ test.describe('Course Click and Detail Flow', () => {
     await page.click('a[href="#/learning"]');
     await page.waitForURL(/.*#\/learning$/);
 
-    // Step 3: Verify course list loads (or empty state appears)
+    // Step 3: Wait for page to finish loading
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(500);
+    
     const courseCount = await page.locator('.learning-card').count();
     const hasCourses = courseCount > 0;
-    const hasEmptyState = await page.locator('text=暂无学习记录').isVisible().catch(() => false);
     
-    expect(hasCourses || hasEmptyState).toBe(true);
+    if (!hasCourses) {
+      // Should show empty state with create button
+      await expect(page.locator('button:has-text("创建今日记录")')).toBeVisible({ timeout: 3000 });
+    }
 
     // Step 4: Create or navigate to today's course
     if (!hasCourses) {
@@ -76,16 +84,23 @@ test.describe('Course Click and Detail Flow', () => {
     const columnCount = await page.locator('.course-column').count();
     expect(columnCount).toBe(4);
 
-    // Verify column headers show target minutes
-    const columns = ['english', 'thai', 'character', 'wealth'];
-    for (const col of columns) {
-      const columnSelector = `.course-column:has(h3:has-text("${col === 'english' ? 'English' : col === 'thai' ? 'ไทย' : col === 'character' ? '修身养性' : '生财有道'}"))`;
-      await expect(page.locator(columnSelector)).toBeVisible();
-    }
+    // Verify all 4 column headers with Chinese labels
+    await expect(page.locator('h3:has-text("英语")')).toBeVisible();
+    await expect(page.locator('h3:has-text("泰语")')).toBeVisible();
+    await expect(page.locator('h3:has-text("修身养性")')).toBeVisible();
+    await expect(page.locator('h3:has-text("生财有道")')).toBeVisible();
 
-    // Verify course structure fields are accessible
+    // Verify course structure: completion toggles, target minutes
     await expect(page.locator('.completion-toggle')).toHaveCount(4);
     await expect(page.locator('.target-time').first()).toBeVisible();
+    
+    // Verify actual content sections exist (materials, exercises)
+    await expect(page.locator('h4:has-text("学习材料")')).toBeVisible();
+    await expect(page.locator('h4:has-text("练习内容")')).toBeVisible();
+    
+    // Verify specific fixture content is readable
+    await expect(page.locator('text=TED Talk: The future of learning')).toBeVisible();
+    await expect(page.locator('text=Vocabulary flashcards')).toBeVisible();
 
     // Step 6: Refresh page (locks vault)
     await page.reload();
@@ -96,54 +111,29 @@ test.describe('Course Click and Detail Flow', () => {
     await expect(page.locator('input#unlock-password')).toBeVisible();
     await expect(page.locator('button:has-text("解锁")')).toBeVisible();
 
-    // Step 8: Unlock with password
-    await page.fill('input#unlock-password', testPassword);
+    // Step 8: Unlock with fixture password
+    await page.fill('input#unlock-password', FIXTURE_PASSWORD);
     await page.click('button:has-text("解锁")');
 
-    // Step 9: Verify detail content is accessible again
+    // Step 9: Verify detail content is accessible again with full data
     await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
     expect(await page.locator('.course-column').count()).toBe(4);
 
-    // Verify content sections are present (materials, exercises, reflection)
-    // Even with totalMinutes=0, columns should be clickable and show structure
-    const firstColumn = page.locator('.course-column').first();
-    await expect(firstColumn.locator('.column-header')).toBeVisible();
-    await expect(firstColumn.locator('.completion-toggle')).toBeVisible();
+    // Verify all content sections restored after unlock
+    await expect(page.locator('h4:has-text("学习材料")')).toBeVisible();
+    await expect(page.locator('h4:has-text("练习内容")')).toBeVisible();
+    await expect(page.locator('text=TED Talk: The future of learning')).toBeVisible();
+    await expect(page.locator('text=Vocabulary flashcards')).toBeVisible();
   });
 
   test('should handle published course with wrapped content structure', async ({ page }) => {
-    // This test validates the dual structure support:
-    // 1. Root: {courses: [...], totalMinutes, notes}
-    // 2. Wrapped: {content: {courses: [...], totalMinutes, notes}}
-
-    // Mock published manifest with wrapped structure
-    await page.route('**/data/manifest.json', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          verifier: {
-            salt: '1b8181d06caa8f6c0bac',
-            verifier: 'test-verifier-hex',
-            iterations: 600000
-          },
-          entries: [
-            {
-              type: 'course',
-              date: todayDate,
-              filename: `course-${todayDate}.json`,
-              sha256: 'test-sha'
-            }
-          ]
-        })
-      });
-    });
-
-    // Initialize vault (already on settings page from beforeEach)
+    // Fixtures already setup with wrapped {content: {courses: []}} format in beforeEach
+    
+    // Initialize vault with fixture password
     await page.getByRole('button', { name: '初始化保险库' }).click();
     await page.waitForTimeout(200);
-    await page.locator('#password').fill(testPassword);
-    await page.locator('#confirm-password').fill(testPassword);
+    await page.locator('#password').fill(FIXTURE_PASSWORD);
+    await page.locator('#confirm-password').fill(FIXTURE_PASSWORD);
     await page.getByRole('button', { name: '确认初始化' }).click();
     await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
 
@@ -151,10 +141,20 @@ test.describe('Course Click and Detail Flow', () => {
     await page.click('a[href="#/learning"]');
     await page.waitForURL(/.*#\/learning$/);
 
-    // Should handle published course loading even if structure varies
-    // The actualData = courseData.content || courseData line handles both
-    const hasCourses = await page.locator('.learning-card').isVisible().catch(() => false);
-    expect(hasCourses !== undefined).toBe(true);
+    // Wait for course to load
+    await page.locator('.learning-card').first().waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Click course to verify wrapped structure is properly unwrapped
+    await page.click('.learning-card');
+    await page.waitForURL(/.*#\/learning\/.+/);
+    
+    // Verify 4 columns loaded despite wrapped structure
+    await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
+    const columnCount = await page.locator('.course-column').count();
+    expect(columnCount).toBe(4);
+    
+    // Verify actual content (proves actualData = courseData.content || courseData works)
+    await expect(page.locator('text=TED Talk: The future of learning')).toBeVisible();
   });
 
   test('should show UnlockPrompt when accessing locked course detail directly', async ({ page }) => {
@@ -175,11 +175,11 @@ test.describe('Course Click and Detail Flow', () => {
   });
 
   test('should preserve course detail state after unlock from prompt', async ({ page }) => {
-    // Initialize vault first (already on settings page from beforeEach)
+    // Initialize vault with fixture password
     await page.getByRole('button', { name: '初始化保险库' }).click();
     await page.waitForTimeout(200);
-    await page.locator('#password').fill(testPassword);
-    await page.locator('#confirm-password').fill(testPassword);
+    await page.locator('#password').fill(FIXTURE_PASSWORD);
+    await page.locator('#confirm-password').fill(FIXTURE_PASSWORD);
     await page.getByRole('button', { name: '确认初始化' }).click();
     await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
 
@@ -187,8 +187,9 @@ test.describe('Course Click and Detail Flow', () => {
     await page.goto(`/#/learning/${todayDate}`);
     await page.waitForLoadState('networkidle');
     
-    // Verify loaded
+    // Verify loaded with full content
     await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=TED Talk: The future of learning')).toBeVisible();
     
     // Refresh to lock
     await page.reload();
@@ -196,11 +197,12 @@ test.describe('Course Click and Detail Flow', () => {
 
     // Unlock via prompt
     await expect(page.locator('input#unlock-password')).toBeVisible();
-    await page.fill('input#unlock-password', testPassword);
+    await page.fill('input#unlock-password', FIXTURE_PASSWORD);
     await page.click('button:has-text("解锁")');
 
-    // Should reload same page with content
+    // Should reload same page with content preserved
     await expect(page.locator('.course-columns')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=TED Talk: The future of learning')).toBeVisible();
     expect(await page.url()).toContain(`/learning/${todayDate}`);
   });
 });
