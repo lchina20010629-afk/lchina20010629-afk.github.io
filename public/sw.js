@@ -19,7 +19,6 @@ const CACHE_STATIC = `static-${CACHE_VERSION}`;
 
 // Files to precache for offline (app shell)
 const SHELL_FILES = [
-  '/',
   '/index.html',
   '/manifest.json',
   '/icons/icon-192x192.png',
@@ -31,17 +30,25 @@ self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
   
   event.waitUntil(
-    caches.open(CACHE_SHELL).then((cache) => {
+    caches.open(CACHE_SHELL).then(async (cache) => {
       console.log('[SW] Caching shell files');
-      return cache.addAll(SHELL_FILES.map(url => new Request(url, { cache: 'reload' })));
-    })
-    .then(() => {
-      console.log('[SW] Shell cached, skipping waiting');
+      // Cache files one by one to handle failures gracefully
+      for (const url of SHELL_FILES) {
+        try {
+          await cache.add(new Request(url, { cache: 'reload' }));
+          console.log('[SW] Cached:', url);
+        } catch (err) {
+          console.warn('[SW] Failed to cache:', url, err);
+          // Continue with other files
+        }
+      }
+      console.log('[SW] Shell caching complete, skipping waiting');
       return self.skipWaiting(); // Activate immediately
     })
     .catch(err => {
       console.error('[SW] Install failed:', err);
-      throw err;
+      // Don't throw - allow SW to install even if caching fails
+      return self.skipWaiting();
     })
   );
 });
