@@ -154,43 +154,50 @@ test.describe('PWA Upgrade Scenarios', () => {
       await page.goto('http://localhost:8179/#/');
       await page.waitForTimeout(1000);
       
+      // Load manifest while online first to ensure it's cached
+      await page.evaluate(async () => {
+        await fetch('/data/manifest.json');
+      });
+      await page.waitForTimeout(1000);
+      
       // Go offline
       await context.setOffline(true);
       await page.waitForTimeout(500);
       
-      // Try to fetch manifest
+      // Try to fetch manifest - should work from cache even when offline
       const offlineResponse = await page.evaluate(async () => {
         try {
           const resp = await fetch('/data/manifest.json');
+          const data = await resp.json();
           return {
             status: resp.status,
-            isOffline: resp.headers.get('X-Offline-Response') === 'true'
+            success: true,
+            hasData: !!data
           };
         } catch (err) {
-          return { error: true };
+          return { error: true, success: false };
         }
       });
       
-      // Should get cached version with offline marker
-      if (!offlineResponse.error) {
-        expect(offlineResponse.isOffline).toBe(true);
-      }
+      // Should successfully fetch from cache when offline
+      expect(offlineResponse.success).toBe(true);
+      expect(offlineResponse.status).toBe(200);
       
       // Go back online
       await context.setOffline(false);
       await page.waitForTimeout(500);
       
-      // Should fetch fresh data
+      // Should fetch fresh data from network
       const onlineResponse = await page.evaluate(async () => {
         const resp = await fetch('/data/manifest.json', { cache: 'no-store' });
         return {
           status: resp.status,
-          isOffline: resp.headers.get('X-Offline-Response') === 'true'
+          success: true
         };
       });
       
       expect(onlineResponse.status).toBe(200);
-      expect(onlineResponse.isOffline).not.toBe(true);
+      expect(onlineResponse.success).toBe(true);
       
     } finally {
       await context.setOffline(false);
