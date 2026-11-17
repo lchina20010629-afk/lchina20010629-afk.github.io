@@ -75,11 +75,7 @@ export function Diary() {
           <p className="text-muted">记录每一天的点滴瞬间</p>
         </header>
 
-        <EmptyState
-          icon={Lock}
-          title="保险库已锁定"
-          description="请先解锁保险库才能查看和创建日记"
-        />
+        <UnlockPrompt message="请先解锁保险库才能查看和创建日记" returnPath="/diary" />
       </div>
     );
   }

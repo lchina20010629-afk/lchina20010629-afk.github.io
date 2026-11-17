@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Plus, Lock, Calendar } from 'lucide-react';
+import { BookOpen, Plus, Calendar } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
 import { useVault } from '../contexts/VaultContext';
 import { getAllCourseRecords } from '../lib/courseStorage';
+import { UnlockPrompt } from '../components/UnlockPrompt';
 import { fetchManifest } from '../lib/manifestLoader';
 import { COURSE_COLUMNS } from '../lib/courseStorage';
 
