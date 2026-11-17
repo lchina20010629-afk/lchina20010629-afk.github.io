@@ -61,7 +61,7 @@ Received: false
               - strong [ref=f1e56]: 生财有道
               - generic [ref=f1e57]: 6分钟
         - link "2026-11-17 已发布" [ref=f1e59] [cursor=pointer]:
-          - /url: "#/learning#/learning/2026-11-17"
+          - /url: "#/learning/2026-11-17"
           - generic [ref=f1e60]: 2026-11-17
           - generic [ref=f1e63]: 已发布
   - button "检查更新" [ref=f1e64] [cursor=pointer]
