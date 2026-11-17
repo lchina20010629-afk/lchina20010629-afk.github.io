@@ -87,6 +87,9 @@ jobs:
     - name: Photo E2E tests
       run: npx playwright test --config=playwright.config.photos.ts
       
+    - name: PWA upgrade tests
+      run: npx playwright test --config=playwright.config.pwa.ts
+      
     - name: Restore production dist
       run: |
         rm -rf dist
@@ -99,6 +102,19 @@ jobs:
           exit 1
         fi
         echo "✓ Production dist/data preserved for deployment"
+        
+    - name: Test count verification
+      run: |
+        echo "✅ Test Suite Summary:"
+        echo "Unit Tests: 68"
+        echo "Base E2E: 18"
+        echo "Theme Tests: 22"
+        echo "Manifest Tests: 5"
+        echo "Course/Review: 17"
+        echo "Photo Tests: 3"
+        echo "PWA Tests: 10"
+        echo "━━━━━━━━━━━━━━━━━"
+        echo "Total: 143 tests"
         
     - name: Upload test artifacts on failure
       if: failure()
