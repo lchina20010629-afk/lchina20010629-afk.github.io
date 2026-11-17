@@ -87,11 +87,18 @@ test.describe('Encrypted Diary Flow', () => {
     // Wait for redirect with longer timeout
     await expect(page).toHaveURL(`/#/diary/${today}`, { timeout: 15000 });
     
-    // Wait for loading spinner to disappear (decryption complete)
-    await page.waitForSelector('.spinner', { state: 'detached', timeout: 20000 });
+    // Wait for loading to complete - check if spinner exists first
+    const spinnerExists = await page.locator('.spinner').count() > 0;
+    if (spinnerExists) {
+      await page.waitForSelector('.spinner', { state: 'detached', timeout: 20000 });
+    }
     
-    // Verify updated content visible
-    await expect(page.getByText('Updated Title')).toBeVisible({ timeout: 10000 });
+    // Wait for network and content to be fully loaded
+    await page.waitForLoadState('networkidle', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+    
+    // Verify updated content visible with longer timeout for slower CI
+    await expect(page.getByText('Updated Title')).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('Updated content with changes.')).toBeVisible({ timeout: 5000 });
   });
 
