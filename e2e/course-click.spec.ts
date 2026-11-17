@@ -24,20 +24,31 @@ test.describe('Course Click and Detail Flow', () => {
   const testPassword = 'test-course-password-123';
   const todayDate = getTodayDate();
 
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+  test.beforeEach(async ({ page, context }) => {
+    // Clear browser state
+    await context.clearCookies();
+    await page.goto('/#/settings');
+    await page.evaluate(async () => {
+      const dbs = await indexedDB.databases();
+      for (const db of dbs) {
+        if (db.name) {
+          indexedDB.deleteDatabase(db.name);
+        }
+      }
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    await page.reload();
   });
 
   test('should handle complete course flow: init → list → click → detail → refresh → unlock → detail', async ({ page }) => {
-    // Step 1: Initialize vault
-    await expect(page.locator('text=保险库未初始化')).toBeVisible({ timeout: 5000 });
-    await page.fill('input[type="password"]', testPassword);
-    await page.fill('input[placeholder*="确认"]', testPassword);
-    await page.click('button:has-text("初始化")');
-    
-    await expect(page.locator('text=初始化成功')).toBeVisible({ timeout: 3000 });
-    await page.waitForTimeout(500);
+    // Step 1: Initialize vault (already on settings page from beforeEach)
+    await page.getByRole('button', { name: '初始化保险库' }).click();
+    await page.waitForTimeout(200);
+    await page.locator('#password').fill(testPassword);
+    await page.locator('#confirm-password').fill(testPassword);
+    await page.getByRole('button', { name: '确认初始化' }).click();
+    await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
 
     // Step 2: Navigate to Learning page
     await page.click('a[href="#/learning"]');
@@ -127,12 +138,13 @@ test.describe('Course Click and Detail Flow', () => {
       });
     });
 
-    // Initialize vault
-    await page.goto('/');
-    await page.fill('input[type="password"]', testPassword);
-    await page.fill('input[placeholder*="确认"]', testPassword);
-    await page.click('button:has-text("初始化")');
-    await expect(page.locator('text=初始化成功')).toBeVisible();
+    // Initialize vault (already on settings page from beforeEach)
+    await page.getByRole('button', { name: '初始化保险库' }).click();
+    await page.waitForTimeout(200);
+    await page.locator('#password').fill(testPassword);
+    await page.locator('#confirm-password').fill(testPassword);
+    await page.getByRole('button', { name: '确认初始化' }).click();
+    await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
 
     // Navigate to learning
     await page.click('a[href="#/learning"]');
@@ -162,12 +174,13 @@ test.describe('Course Click and Detail Flow', () => {
   });
 
   test('should preserve course detail state after unlock from prompt', async ({ page }) => {
-    // Initialize vault first
-    await page.goto('/');
-    await page.fill('input[type="password"]', testPassword);
-    await page.fill('input[placeholder*="确认"]', testPassword);
-    await page.click('button:has-text("初始化")');
-    await expect(page.locator('text=初始化成功')).toBeVisible();
+    // Initialize vault first (already on settings page from beforeEach)
+    await page.getByRole('button', { name: '初始化保险库' }).click();
+    await page.waitForTimeout(200);
+    await page.locator('#password').fill(testPassword);
+    await page.locator('#confirm-password').fill(testPassword);
+    await page.getByRole('button', { name: '确认初始化' }).click();
+    await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
 
     // Navigate to course detail
     await page.goto(`/#/learning/${todayDate}`);
