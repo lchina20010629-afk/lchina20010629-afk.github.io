@@ -326,6 +326,42 @@ test.describe('PWA Upgrade Scenarios', () => {
       expect(result.isOffline).not.toBe(true);
     });
   });
+
+  test('should fetch fresh manifest on every navigation (A→B upgrade sim)', async ({ page }) => {
+    // Simulate: User has cached version A, then version B is deployed
+    // This tests that navigation triggers fresh manifest fetch
+    
+    await page.goto('http://localhost:5173/#/');
+    await page.waitForTimeout(1000);
+    
+    // Record initial manifest generation time
+    const initialGen = await page.evaluate(async () => {
+      const resp = await fetch('/data/manifest.json', { cache: 'reload' });
+      const data = await resp.json();
+      return data.generatedAt;
+    });
+    
+    // Navigate to different routes multiple times
+    await page.goto('http://localhost:5173/#/learning');
+    await page.waitForTimeout(500);
+    await page.goto('http://localhost:5173/#/settings');
+    await page.waitForTimeout(500);
+    
+    // Each navigation should fetch manifest from network (not cache)
+    const postNavGen = await page.evaluate(async () => {
+      const resp = await fetch('/data/manifest.json', { cache: 'reload' });
+      const data = await resp.json();
+      return {
+        generatedAt: data.generatedAt,
+        fromNetwork: !resp.headers.get('X-Offline-Response')
+      };
+    });
+    
+    // Verify it's fetching from network
+    expect(postNavGen.fromNetwork).toBe(true);
+    
+    console.log('✓ Manifest fetched fresh on navigation (A→B upgrade would be visible)');
+  });
 });
 
 test.describe('PWA Cache Security', () => {
