@@ -1,0 +1,45 @@
+{
+  "title": "学习记录 2024-03-15",
+  "content": {
+    "courses": [
+      {
+        "name": "English",
+        "targetMinutes": 10,
+        "actualMinutes": 10,
+        "completed": true,
+        "materials": ["Cambridge English", "BBC Podcast"],
+        "exercises": ["Vocabulary quiz", "Listening practice"],
+        "reflection": "Good progress on idioms today"
+      },
+      {
+        "name": "Thai",
+        "targetMinutes": 8,
+        "actualMinutes": 8,
+        "completed": true,
+        "materials": ["Thai basics textbook"],
+        "exercises": ["Pronunciation drills"],
+        "reflection": "Learned greeting phrases"
+      },
+      {
+        "name": "修身养性",
+        "targetMinutes": 6,
+        "actualMinutes": 6,
+        "completed": true,
+        "materials": ["道德经 第一章"],
+        "exercises": ["Meditation 10 minutes"],
+        "reflection": "深入理解了道的含义"
+      },
+      {
+        "name": "生财有道案例",
+        "targetMinutes": 6,
+        "actualMinutes": 6,
+        "completed": true,
+        "materials": ["Apple ecosystem strategy"],
+        "exercises": ["Case analysis"],
+        "reflection": "Learned about platform business models"
+      }
+    ],
+    "totalMinutes": 30,
+    "notes": "Completed all four areas today"
+  }
+}

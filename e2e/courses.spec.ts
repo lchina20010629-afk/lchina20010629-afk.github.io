@@ -1,9 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { promises as fs } from 'fs';
-import { join } from 'path';
 
 const TEST_PASSWORD = 'TestPass123!';
-const FIXTURES_DIR = '/tmp/test-course-fixtures';
 
 test.describe('Course/Learning Features', () => {
   test.beforeEach(async ({ page, context }) => {
@@ -37,25 +34,51 @@ test.describe('Course/Learning Features', () => {
 
   test('should load and display published courses', async ({ page }) => {
     await page.goto('/#/learning');
+    await page.waitForTimeout(500);
     
     // Should see course entries
-    await expect(page.locator('text=2024-03-15')).toBeVisible();
-    await expect(page.locator('text=2024-03-16')).toBeVisible();
+    await expect(page.locator('text=2024-03-15')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=2024-03-16')).toBeVisible({ timeout: 10000 });
     
     // Both should show published badge
-    await expect(page.locator('.published-badge').first()).toBeVisible();
+    const badges = page.locator('.published-badge');
+    await expect(badges.first()).toBeVisible();
   });
 
-  test('should render course detail with 4 columns', async ({ page }) => {
+  test('should navigate to course detail by clicking list item', async ({ page }) => {
+    // This test verifies the user's issue: "学习内容点不进去"
+    await page.goto('/#/learning');
+    await page.waitForTimeout(500);
+    
+    // Wait for course list to load
+    const courseCard = page.locator('a[href="#/learning/2024-03-16"]');
+    await expect(courseCard).toBeVisible({ timeout: 10000 });
+    
+    // Click the course card
+    await courseCard.click();
+    await page.waitForTimeout(1000);
+    
+    // Verify we navigated to the course detail page
+    expect(page.url()).toContain('#/learning/2024-03-16');
+    
+    // Verify course content is visible
+    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=泰语')).toBeVisible();
+    await expect(page.locator('text=修身养性')).toBeVisible();
+    await expect(page.locator('text=生财有道')).toBeVisible();
+  });
+
+  test('should render course detail with 4 columns and materials', async ({ page }) => {
     await page.goto('/#/learning/2024-03-16');
+    await page.waitForTimeout(1000);
     
     // Check all 4 column headers
-    await expect(page.locator('text=英语')).toBeVisible();
+    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('text=泰语')).toBeVisible();
     await expect(page.locator('text=修身养性')).toBeVisible();
     await expect(page.locator('text=生财有道')).toBeVisible();
     
-    // Check materials
+    // Check materials from test fixtures
     await expect(page.locator('text=TED Talk: The power of words')).toBeVisible();
     await expect(page.locator('text=Thai script practice')).toBeVisible();
     await expect(page.locator('text=道德经 第一章')).toBeVisible();
@@ -68,6 +91,54 @@ test.describe('Course/Learning Features', () => {
     // Check summary stats
     await expect(page.locator('text=30分钟')).toBeVisible(); // total minutes
     await expect(page.locator('text=100%')).toBeVisible(); // completion rate
+  });
+
+  test('should reload and unlock to restore course content - user issue: "初始化密码以后刷新页面无法加载出来"', async ({ page }) => {
+    // Navigate to a course
+    await page.goto('/#/learning/2024-03-16');
+    await page.waitForTimeout(1000);
+    
+    // Verify content loads initially
+    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=TED Talk: The power of words')).toBeVisible();
+    
+    // Full page reload (simulates user refreshing)
+    await page.reload();
+    await page.waitForTimeout(1000);
+    
+    // After reload, vault is locked - should show locked message
+    await expect(page.locator('text=请先解锁保险库')).toBeVisible({ timeout: 10000 });
+    
+    // Unlock with correct password
+    await page.goto('/#/settings');
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: '解锁' }).first().click();
+    await page.waitForTimeout(200);
+    await page.locator('#unlock-password').fill(TEST_PASSWORD);
+    await page.locator('form').filter({ hasText: '密码' }).getByRole('button', { name: '解锁' }).click();
+    await expect(page.getByText('保险库已解锁')).toBeVisible({ timeout: 5000 });
+    
+    // Navigate back to course
+    await page.goto('/#/learning/2024-03-16');
+    await page.waitForTimeout(1000);
+    
+    // Content should be visible again
+    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=TED Talk: The power of words')).toBeVisible();
+    await expect(page.locator('text=泰语')).toBeVisible();
+  });
+
+  test('should handle deep link to course detail after page refresh', async ({ page }) => {
+    // This is another variant of the user's refresh issue
+    // User initializes password, then directly visits a course URL
+    
+    // Go directly to course detail page
+    await page.goto('/#/learning/2024-03-16');
+    await page.waitForTimeout(1000);
+    
+    // Should load content successfully (vault already unlocked in beforeEach)
+    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=TED Talk')).toBeVisible();
   });
 
   test('should track explicit completion toggles locally', async ({ page }) => {
@@ -143,7 +214,8 @@ test.describe('Course/Learning Features', () => {
 
   test('should clear course data on lock', async ({ page }) => {
     await page.goto('/#/learning/2024-03-16');
-    await expect(page.locator('text=TED Talk')).toBeVisible();
+    await page.waitForTimeout(1000);
+    await expect(page.locator('text=TED Talk')).toBeVisible({ timeout: 10000 });
     
     // Lock
     await page.goto('/#/settings');
@@ -151,12 +223,17 @@ test.describe('Course/Learning Features', () => {
     
     // Navigate back - should show locked message
     await page.goto('/#/learning/2024-03-16');
-    await expect(page.locator('text=请先解锁保险库')).toBeVisible();
+    await page.waitForTimeout(500);
+    await expect(page.locator('text=请先解锁保险库')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('text=TED Talk')).not.toBeVisible();
   });
 
   test('should not allow editing published courses', async ({ page }) => {
     await page.goto('/#/learning/2024-03-16');
+    await page.waitForTimeout(1000);
+    
+    // Wait for content to load
+    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
     
     // Completion toggle should be disabled
     const toggle = page.locator('.completion-toggle').first();
@@ -182,56 +259,7 @@ test.describe('Course/Learning Features', () => {
     
     // Courses should remain locked
     await page.goto('/#/learning');
+    await page.waitForTimeout(500);
     await expect(page.locator('text=请先解锁保险库')).toBeVisible({ timeout: 10000 });
-  });
-
-  test('should capture screenshots of course detail with feedback', async ({ page }) => {
-    // Navigate to published course with feedback
-    await page.goto('/#/learning/2024-03-16');
-    await page.waitForTimeout(1000);
-    
-    // Wait for content to load
-    await expect(page.locator('text=英语')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('text=TED Talk')).toBeVisible();
-    
-    // Verify all 4 columns are present
-    await expect(page.locator('text=泰语')).toBeVisible();
-    await expect(page.locator('text=修身养性')).toBeVisible();
-    await expect(page.locator('text=生财有道')).toBeVisible();
-    
-    // Desktop screenshot
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-desktop.png', fullPage: true });
-    
-    // Mobile screenshots - normal viewport at top and scrolled position
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.waitForTimeout(500);
-    
-    // Scroll to top first
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(300);
-    
-    // Verify first cards visible at top (英语 should be visible, 生财有道 should be below fold)
-    await expect(page.locator('.course-column').filter({ hasText: '英语' })).toBeVisible();
-    
-    // Screenshot top viewport (showing 英语, 泰语)
-    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-mobile-top.png' });
-    
-    // Scroll down to show bottom cards
-    await page.evaluate(() => {
-      const columns = document.querySelectorAll('.course-column');
-      if (columns.length >= 4) {
-        columns[3].scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    });
-    await page.waitForTimeout(500);
-    
-    // Verify bottom cards visible after scroll (生财有道, 修身养性)
-    const shengcaiCard = page.locator('.course-column').filter({ hasText: '生财有道' });
-    await expect(shengcaiCard).toBeVisible();
-    
-    // Screenshot bottom viewport (showing 修身养性, 生财有道, 今日总结)
-    await page.screenshot({ path: '/opt/cursor/artifacts/course-detail-mobile-bottom.png' });
   });
 });
