@@ -87,12 +87,11 @@ test.describe('Encrypted Diary Flow', () => {
     // Wait for redirect with longer timeout
     await expect(page).toHaveURL(`/#/diary/${today}`, { timeout: 15000 });
     
-    // Wait for content to be decrypted and rendered
-    await page.waitForLoadState('networkidle', { timeout: 10000 });
-    await page.waitForTimeout(2000);
+    // Wait for loading spinner to disappear (decryption complete)
+    await page.waitForSelector('.spinner', { state: 'detached', timeout: 20000 });
     
-    // Verify updated content visible with longer timeout for slower CI
-    await expect(page.getByText('Updated Title')).toBeVisible({ timeout: 30000 });
+    // Verify updated content visible
+    await expect(page.getByText('Updated Title')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Updated content with changes.')).toBeVisible({ timeout: 5000 });
   });
 
