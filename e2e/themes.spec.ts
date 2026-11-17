@@ -260,8 +260,8 @@ test.describe('Dark Mode Contrast', () => {
     
     const mainH1 = page.locator('main h1, .page-header h1').first();
     await expect(mainH1).toBeVisible();
-    await expect(page.getByText('生活日记')).toBeVisible();
-    await expect(page.getByText('成长学习')).toBeVisible();
+    await expect(page.getByText('生活日记').first()).toBeVisible();
+    await expect(page.getByText('成长学习').first()).toBeVisible();
     
     // Verify dark theme attribute is set
     const themeAttr = await page.evaluate(() => 

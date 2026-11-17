@@ -7,22 +7,23 @@
 # Test info
 
 - Name: themes.spec.ts >> Dark Mode Contrast >> should have readable text in dark mode
-- Location: e2e/themes.spec.ts:248:3
+- Location: e2e/themes.spec.ts:249:3
 
 # Error details
 
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: locator('h1')
+Locator: getByText('生活日记')
 Expected: visible
-Error: strict mode violation: locator('h1') resolved to 2 elements:
-    1) <h1 class="sidebar-title">个人成长</h1> aka getByRole('heading', { name: '个人成长' })
-    2) <h1>今日总览</h1> aka getByRole('heading', { name: '今日总览' })
+Error: strict mode violation: getByText('生活日记') resolved to 3 elements:
+    1) <span>生活日记</span> aka getByRole('link', { name: '生活日记' })
+    2) <span class="mobile-nav-label">生活日记</span> aka getByText('生活日记').nth(1)
+    3) <h3>生活日记</h3> aka getByRole('heading', { name: '生活日记' })
 
 Call log:
-  - Expect "toBeVisible" locator('h1') with timeout 5000ms
-  - waiting for locator('h1')
+  - Expect "toBeVisible" getByText('生活日记') with timeout 5000ms
+  - waiting for getByText('生活日记')
 
 ```
 
@@ -86,119 +87,130 @@ Call log:
 # Test source
 
 ```ts
-  160 |         await expect(page.locator('h1')).toContainText(title, { timeout: 3000 });
-  161 |         
-  162 |         // Check no horizontal overflow
-  163 |         const overflow = await page.evaluate(() => {
-  164 |           return document.documentElement.scrollWidth > document.documentElement.clientWidth;
-  165 |         });
-  166 |         expect(overflow).toBe(false);
-  167 |       }
-  168 |     });
-  169 |   }
-  170 | });
-  171 | 
-  172 | test.describe('Theme Screenshots', () => {
-  173 |   for (const palette of palettes) {
-  174 |     for (const mode of modes) {
-  175 |       test(`should capture ${palette}-${mode} at mobile width`, async ({ page }) => {
-  176 |         await page.setViewportSize({ width: 375, height: 667 });
-  177 |         
-  178 |         // Set theme
-  179 |         await page.goto('/#/settings');
-  180 |         await page.waitForTimeout(500);
-  181 |         
-  182 |         // Set palette
-  183 |         await page.locator(`.palette-card[data-palette="${palette}"]`).click();
-  184 |         await page.waitForTimeout(200);
-  185 |         
-  186 |         // Set mode
-  187 |         const modeButton = mode === 'light' 
-  188 |           ? page.getByRole('button', { name: /浅色/ })
-  189 |           : page.getByRole('button', { name: /深色/ });
-  190 |         await modeButton.click();
-  191 |         await page.waitForTimeout(200);
-  192 |         
-  193 |         // Go to homepage and capture
-  194 |         await page.goto('/#/');
-  195 |         await page.waitForTimeout(1000);
-  196 |         
-  197 |         await page.screenshot({ 
-  198 |           path: `/opt/cursor/artifacts/theme-${palette}-${mode}-mobile.png`,
-  199 |           fullPage: false
-  200 |         });
-  201 |       });
-  202 |     }
-  203 |   }
-  204 |   
-  205 |   test('should capture desktop view with all palettes', async ({ page }) => {
-  206 |     await page.setViewportSize({ width: 1280, height: 720 });
-  207 |     
-  208 |     for (const palette of palettes) {
-  209 |       await page.goto('/#/settings');
-  210 |       await page.waitForTimeout(500);
-  211 |       
-  212 |       await page.locator(`.palette-card[data-palette="${palette}"]`).click();
-  213 |       await page.waitForTimeout(200);
-  214 |       
-  215 |       await page.goto('/#/');
-  216 |       await page.waitForTimeout(1000);
-  217 |       
-  218 |       await page.screenshot({ 
-  219 |         path: `/opt/cursor/artifacts/theme-${palette}-light-desktop.png`,
-  220 |         fullPage: false
-  221 |       });
-  222 |     }
-  223 |   });
-  224 | });
-  225 | 
-  226 | test.describe('Touch Targets', () => {
-  227 |   test('should have minimum 44px touch targets on mobile', async ({ page }) => {
-  228 |     await page.setViewportSize({ width: 375, height: 667 });
-  229 |     await page.goto('/#/');
-  230 |     await page.waitForTimeout(1000);
-  231 |     
-  232 |     // Check navigation buttons
-  233 |     const navButtons = page.locator('nav button, nav a');
-  234 |     const count = await navButtons.count();
-  235 |     
-  236 |     for (let i = 0; i < count; i++) {
-  237 |       const button = navButtons.nth(i);
-  238 |       const box = await button.boundingBox();
-  239 |       
-  240 |       if (box) {
-  241 |         expect(box.height).toBeGreaterThanOrEqual(44);
-  242 |       }
-  243 |     }
-  244 |   });
-  245 | });
-  246 | 
-  247 | test.describe('Dark Mode Contrast', () => {
-  248 |   test('should have readable text in dark mode', async ({ page }) => {
-  249 |     await page.goto('/#/settings');
-  250 |     await page.waitForTimeout(500);
-  251 |     
-  252 |     // Switch to dark mode
-  253 |     await page.getByRole('button', { name: /深色/ }).click();
-  254 |     await page.waitForTimeout(200);
-  255 |     
-  256 |     // Check various text elements are visible
-  257 |     await page.goto('/#/');
-  258 |     await page.waitForTimeout(500);
-  259 |     
-> 260 |     await expect(page.locator('h1')).toBeVisible();
-      |                                      ^ Error: expect(locator).toBeVisible() failed
-  261 |     await expect(page.getByText('生活日记')).toBeVisible();
-  262 |     await expect(page.getByText('成长学习')).toBeVisible();
-  263 |     
-  264 |     // Verify dark theme colors are applied
-  265 |     const bgColor = await page.evaluate(() => {
-  266 |       return window.getComputedStyle(document.body).backgroundColor;
-  267 |     });
-  268 |     
-  269 |     // Dark background should be dark (low RGB values)
-  270 |     expect(bgColor).toMatch(/rgb\([\d\s,]*[0-5]\d/); // Check for low RGB values
-  271 |   });
-  272 | });
-  273 | 
+  163 |         // Check no horizontal overflow
+  164 |         const overflow = await page.evaluate(() => {
+  165 |           return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+  166 |         });
+  167 |         expect(overflow).toBe(false);
+  168 |       }
+  169 |     });
+  170 |   }
+  171 | });
+  172 | 
+  173 | test.describe('Theme Screenshots', () => {
+  174 |   for (const palette of palettes) {
+  175 |     for (const mode of modes) {
+  176 |       test(`should capture ${palette}-${mode} at mobile width`, async ({ page }) => {
+  177 |         await page.setViewportSize({ width: 375, height: 667 });
+  178 |         
+  179 |         // Set theme
+  180 |         await page.goto('/#/settings');
+  181 |         await page.waitForTimeout(500);
+  182 |         
+  183 |         // Set palette
+  184 |         await page.locator(`.palette-card[data-palette="${palette}"]`).click();
+  185 |         await page.waitForTimeout(200);
+  186 |         
+  187 |         // Set mode
+  188 |         const modeButton = mode === 'light' 
+  189 |           ? page.getByRole('button', { name: /浅色/ })
+  190 |           : page.getByRole('button', { name: /深色/ });
+  191 |         await modeButton.click();
+  192 |         await page.waitForTimeout(200);
+  193 |         
+  194 |         // Go to homepage and capture
+  195 |         await page.goto('/#/');
+  196 |         await page.waitForTimeout(1000);
+  197 |         
+  198 |         await page.screenshot({ 
+  199 |           path: `/opt/cursor/artifacts/theme-${palette}-${mode}-mobile.png`,
+  200 |           fullPage: false
+  201 |         });
+  202 |       });
+  203 |     }
+  204 |   }
+  205 |   
+  206 |   test('should capture desktop view with all palettes', async ({ page }) => {
+  207 |     await page.setViewportSize({ width: 1280, height: 720 });
+  208 |     
+  209 |     for (const palette of palettes) {
+  210 |       await page.goto('/#/settings');
+  211 |       await page.waitForTimeout(500);
+  212 |       
+  213 |       await page.locator(`.palette-card[data-palette="${palette}"]`).click();
+  214 |       await page.waitForTimeout(200);
+  215 |       
+  216 |       await page.goto('/#/');
+  217 |       await page.waitForTimeout(1000);
+  218 |       
+  219 |       await page.screenshot({ 
+  220 |         path: `/opt/cursor/artifacts/theme-${palette}-light-desktop.png`,
+  221 |         fullPage: false
+  222 |       });
+  223 |     }
+  224 |   });
+  225 | });
+  226 | 
+  227 | test.describe('Touch Targets', () => {
+  228 |   test('should have minimum 44px touch targets on mobile', async ({ page }) => {
+  229 |     await page.setViewportSize({ width: 375, height: 667 });
+  230 |     await page.goto('/#/');
+  231 |     await page.waitForTimeout(1000);
+  232 |     
+  233 |     // Check navigation buttons
+  234 |     const navButtons = page.locator('nav button, nav a');
+  235 |     const count = await navButtons.count();
+  236 |     
+  237 |     for (let i = 0; i < count; i++) {
+  238 |       const button = navButtons.nth(i);
+  239 |       const box = await button.boundingBox();
+  240 |       
+  241 |       if (box) {
+  242 |         expect(box.height).toBeGreaterThanOrEqual(44);
+  243 |       }
+  244 |     }
+  245 |   });
+  246 | });
+  247 | 
+  248 | test.describe('Dark Mode Contrast', () => {
+  249 |   test('should have readable text in dark mode', async ({ page }) => {
+  250 |     await page.goto('/#/settings');
+  251 |     await page.waitForTimeout(500);
+  252 |     
+  253 |     // Switch to dark mode
+  254 |     await page.getByRole('button', { name: /深色/ }).click();
+  255 |     await page.waitForTimeout(200);
+  256 |     
+  257 |     // Check various text elements are visible
+  258 |     await page.goto('/#/');
+  259 |     await page.waitForTimeout(1000);
+  260 |     
+  261 |     const mainH1 = page.locator('main h1, .page-header h1').first();
+  262 |     await expect(mainH1).toBeVisible();
+> 263 |     await expect(page.getByText('生活日记')).toBeVisible();
+      |                                          ^ Error: expect(locator).toBeVisible() failed
+  264 |     await expect(page.getByText('成长学习')).toBeVisible();
+  265 |     
+  266 |     // Verify dark theme attribute is set
+  267 |     const themeAttr = await page.evaluate(() => 
+  268 |       document.documentElement.getAttribute('data-theme')
+  269 |     );
+  270 |     expect(themeAttr).toBe('dark');
+  271 |     
+  272 |     // Verify dark background color is applied (should have low RGB values)
+  273 |     const bgColor = await page.evaluate(() => {
+  274 |       return window.getComputedStyle(document.documentElement).backgroundColor;
+  275 |     });
+  276 |     
+  277 |     // Background should be dark (RGB values less than 100)
+  278 |     const rgbMatch = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  279 |     if (rgbMatch) {
+  280 |       const r = parseInt(rgbMatch[1]);
+  281 |       const g = parseInt(rgbMatch[2]);
+  282 |       const b = parseInt(rgbMatch[3]);
+  283 |       expect(Math.max(r, g, b)).toBeLessThan(100);
+  284 |     }
+  285 |   });
+  286 | });
+  287 | 
 ```
