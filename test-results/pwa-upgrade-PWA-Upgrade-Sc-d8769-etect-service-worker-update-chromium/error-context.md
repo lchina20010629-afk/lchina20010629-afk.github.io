@@ -20,7 +20,7 @@ ReferenceError: require is not defined
 ```ts
   1   | import { test, expect, Page } from '@playwright/test';
   2   | import { execSync } from 'child_process';
-  3   | import { mkdirSync, writeFileSync, rmSync } from 'fs';
+  3   | import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'fs';
   4   | import { join } from 'path';
   5   | 
   6   | const TEST_PASSWORD = 'TestPass123!';
@@ -64,8 +64,7 @@ ReferenceError: require is not defined
   44  |     // Modify service worker version for build B
   45  |     console.log('Building version B (modified SW)...');
   46  |     const swPath = '/agent/repos/lchina20010629-afk.github.io/public/sw.js';
-> 47  |     const swContent = require('fs').readFileSync(swPath, 'utf-8');
-      |                       ^ ReferenceError: require is not defined
+  47  |     const swContent = readFileSync(swPath, 'utf-8');
   48  |     const swModified = swContent.replace("const CACHE_VERSION = 'v1'", "const CACHE_VERSION = 'v2'");
   49  |     writeFileSync(swPath, swModified, 'utf-8');
   50  |     
@@ -83,7 +82,8 @@ ReferenceError: require is not defined
   62  | 
   63  |   test('should detect service worker update', async ({ page }) => {
   64  |     // Start static server for build A
-  65  |     const { spawn } = require('child_process');
+> 65  |     const { spawn } = require('child_process');
+      |                       ^ ReferenceError: require is not defined
   66  |     const server = spawn('npx', ['http-server', buildADir, '-p', '8177', '--silent'], {
   67  |       stdio: 'pipe'
   68  |     });
@@ -166,4 +166,22 @@ ReferenceError: require is not defined
   145 |           const resp = await fetch('/data/manifest.json');
   146 |           return {
   147 |             status: resp.status,
+  148 |             isOffline: resp.headers.get('X-Offline-Response') === 'true'
+  149 |           };
+  150 |         } catch (err) {
+  151 |           return { error: true };
+  152 |         }
+  153 |       });
+  154 |       
+  155 |       // Should get cached version with offline marker
+  156 |       if (!offlineResponse.error) {
+  157 |         expect(offlineResponse.isOffline).toBe(true);
+  158 |       }
+  159 |       
+  160 |       // Go back online
+  161 |       await context.setOffline(false);
+  162 |       await page.waitForTimeout(500);
+  163 |       
+  164 |       // Should fetch fresh data
+  165 |       const onlineResponse = await page.evaluate(async () => {
 ```
