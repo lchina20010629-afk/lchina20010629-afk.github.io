@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BookOpen, Plus, Calendar } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
 import { useVault } from '../contexts/VaultContext';
@@ -17,6 +17,7 @@ interface CourseEntry {
 export function Learning() {
   const { isUnlocked } = useVault();
   const location = useLocation();
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<CourseEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -119,13 +120,13 @@ export function Learning() {
           description="开始记录您的每日学习进度"
           action={{
             label: '创建今日记录',
-            onClick: () => window.location.hash = `#/learning/${getTodayDate()}`
+            onClick: () => navigate(`/learning/${getTodayDate()}`)
           }}
         />
       ) : (
         <div className="learning-list">
           {entries.map((entry) => (
-            <Link key={entry.id} to={`#/learning/${entry.date}`} className="learning-card card">
+            <Link key={entry.id} to={`/learning/${entry.date}`} className="learning-card card">
               <div className="learning-date">
                 <Calendar size={20} />
                 {entry.date}
