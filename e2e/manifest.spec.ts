@@ -13,7 +13,7 @@ const __dirname = dirname(__filename);
  * Test fixtures generated before tests run (see package.json test:manifest script)
  */
 
-const TEST_PASSWORD = 'TestFixturePassword123';
+const TEST_PASSWORD = 'TestPass123!';
 
 test.describe('CLI → Manifest → Browser Loader', () => {
   // Server lifecycle managed by Playwright webServer config

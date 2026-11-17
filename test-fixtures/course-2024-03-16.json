@@ -1,0 +1,45 @@
+{
+  "title": "学习记录 2024-03-16",
+  "content": {
+    "courses": [
+      {
+        "name": "English",
+        "targetMinutes": 10,
+        "actualMinutes": 10,
+        "completed": true,
+        "materials": ["TED Talk: The power of words"],
+        "exercises": ["Shadowing practice"],
+        "reflection": "Learned new idioms"
+      },
+      {
+        "name": "Thai",
+        "targetMinutes": 8,
+        "actualMinutes": 8,
+        "completed": true,
+        "materials": ["Thai script practice"],
+        "exercises": ["Writing practice"],
+        "reflection": "Practiced Thai consonants"
+      },
+      {
+        "name": "修身养性",
+        "targetMinutes": 6,
+        "actualMinutes": 6,
+        "completed": true,
+        "materials": ["道德经 第一章"],
+        "exercises": ["Reflection writing"],
+        "reflection": "Understanding of Tao deepened"
+      },
+      {
+        "name": "生财有道案例",
+        "targetMinutes": 6,
+        "actualMinutes": 6,
+        "completed": true,
+        "materials": ["Tesla vertical integration case"],
+        "exercises": ["Business model canvas"],
+        "reflection": "Supply chain strategy insights"
+      }
+    ],
+    "totalMinutes": 30,
+    "notes": "Excellent progress across all areas"
+  }
+}

@@ -138,7 +138,7 @@ export function CourseDetail() {
     <div className="course-detail">
       <header className="page-header">
         <div className="header-row">
-          <Link to="#/learning" className="back-button">
+          <Link to="/learning" className="back-button">
             <ArrowLeft size={20} />
           </Link>
           <h1>学习记录 - {date}</h1>

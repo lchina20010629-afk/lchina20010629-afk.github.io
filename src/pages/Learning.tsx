@@ -94,7 +94,7 @@ export function Learning() {
       <header className="page-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h1>成长学习</h1>
-          <Link to={`#/learning/${getTodayDate()}`} className="btn btn-primary">
+          <Link to={`/learning/${getTodayDate()}`} className="btn btn-primary">
             <Plus size={20} />
             今日学习
           </Link>
@@ -120,13 +120,13 @@ export function Learning() {
           description="开始记录您的每日学习进度"
           action={{
             label: '创建今日记录',
-            onClick: () => window.location.hash = `#/learning/${getTodayDate()}`
+            onClick: () => window.location.hash = `/learning/${getTodayDate()}`
           }}
         />
       ) : (
         <div className="learning-list">
           {entries.map((entry) => (
-            <Link key={entry.id} to={`#/learning/${entry.date}`} className="learning-card card">
+            <Link key={entry.id} to={`/learning/${entry.date}`} className="learning-card card">
               <div className="learning-date">
                 <Calendar size={20} />
                 {entry.date}

@@ -34,3 +34,8 @@ coverage
 # Temporary files
 .tmp
 *.tmp
+
+# Test output
+test-results/
+test-output/data/encrypted/
+playwright-report/
