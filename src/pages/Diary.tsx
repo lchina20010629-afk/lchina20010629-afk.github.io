@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Plus, Lock, Cloud } from 'lucide-react';
+import { BookOpen, Plus, Cloud } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
+import { UnlockPrompt } from '../components/UnlockPrompt';
 import { useVault } from '../contexts/VaultContext';
 import { getAllDiaryEntries } from '../lib/diaryStorage';
 import { fetchManifest } from '../lib/manifestLoader';
